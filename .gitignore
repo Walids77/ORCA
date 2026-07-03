@@ -1,0 +1,26 @@
+# Secrets — NEVER commit (ORCA is a PUBLIC repo)
+.env
+.env.*
+*.pem
+*.key
+
+# Python junk
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Local data — uploaded/test files stay out of the public repo
+data/
+*.db
+*.sqlite3
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+
+# Personal planning & working notes — local only, never on public GitHub
+ORCA_BRIEF.md
+CLAUDE.md
+.claude/
+memory/
