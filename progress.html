@@ -9,25 +9,25 @@
     --bg: #f6f8fa; --card: #ffffff; --ink: #1f2328; --muted: #59636e;
     --line: #d1d9e0; --done: #1a7f37; --done-bg: #dafbe1;
     --now: #9a6700; --now-bg: #fff8c5; --later: #59636e; --later-bg: #eff2f5;
-    --accent: #0969da;
+    --accent: #0969da; --sql: #8250df; --vec: #1f883d; --file: #bc4c00;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #0d1117; --card: #161b22; --ink: #e6edf3; --muted: #9198a1;
       --line: #30363d; --done: #3fb950; --done-bg: #12261e;
       --now: #d29922; --now-bg: #272115; --later: #9198a1; --later-bg: #21262d;
-      --accent: #4493f8;
+      --accent: #4493f8; --sql: #a371f7; --vec: #3fb950; --file: #db6d28;
     }
   }
   * { box-sizing: border-box; margin: 0; }
   body {
     font-family: "Segoe UI", system-ui, sans-serif; background: var(--bg);
-    color: var(--ink); line-height: 1.55; padding: 2rem 1rem; max-width: 900px;
+    color: var(--ink); line-height: 1.55; padding: 2rem 1rem; max-width: 940px;
     margin: 0 auto;
   }
   h1 { font-size: 1.7rem; margin-bottom: .2rem; }
   .sub { color: var(--muted); margin-bottom: 2rem; }
-  h2 { font-size: 1.15rem; margin: 2rem 0 .8rem; }
+  h2 { font-size: 1.15rem; margin: 2.4rem 0 .9rem; }
   .card {
     background: var(--card); border: 1px solid var(--line); border-radius: 10px;
     padding: 1rem 1.2rem; margin-bottom: .7rem;
@@ -53,7 +53,48 @@
   }
   ul.done-list .when { color: var(--muted); font-size: .8rem; }
 
-  /* Pipeline diagram */
+  /* Generic flow diagram bits */
+  .flow { display: flex; flex-direction: column; align-items: center; }
+  .node {
+    border: 1.5px solid var(--line); border-radius: 9px; background: var(--card);
+    padding: .55rem .9rem; text-align: center; font-size: .9rem; font-weight: 600;
+    max-width: 460px;
+  }
+  .node small { display:block; font-weight: 400; color: var(--muted); font-size: .78rem; margin-top:.15rem; }
+  .arrow { color: var(--muted); font-size: 1.1rem; line-height: 1; margin: .28rem 0; }
+  .branch { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; margin-top:.2rem; }
+  .chip {
+    border: 1.5px solid var(--line); border-radius: 8px; padding: .4rem .7rem;
+    font-size: .84rem; font-weight: 600; background: var(--card); text-align:center;
+  }
+  .chip small { display:block; font-weight:400; color: var(--muted); font-size:.75rem; }
+  .chip.muted { opacity: .55; border-style: dashed; }
+
+  /* Numbered pipeline */
+  .pipe { display: flex; flex-direction: column; gap: 0; }
+  .step { display: flex; gap: .8rem; align-items: flex-start; padding: .5rem 0; }
+  .step .num {
+    flex: 0 0 1.8rem; height: 1.8rem; border-radius: 50%; background: var(--now);
+    color:#fff; font-weight:700; text-align:center; line-height:1.8rem; font-size:.9rem;
+  }
+  .step .txt { flex:1; }
+  .step .txt b { font-size:.95rem; }
+  .step .txt span { color: var(--muted); font-size:.86rem; }
+  .stepline { width:2px; background: var(--line); height:.5rem; margin-left:.9rem; }
+
+  /* Three stores */
+  .stores { display: flex; gap: .7rem; flex-wrap: wrap; margin-top: .3rem; }
+  .store {
+    flex:1; min-width: 200px; border: 1.5px solid var(--line); border-top-width:4px;
+    border-radius: 8px; padding: .6rem .8rem; font-size: .86rem;
+  }
+  .store b { display:block; margin-bottom:.2rem; }
+  .store small { color: var(--muted); }
+  .s-sql { border-top-color: var(--sql); }
+  .s-vec { border-top-color: var(--vec); }
+  .s-file { border-top-color: var(--file); }
+
+  /* Roadmap phases */
   .phase { display: flex; gap: 1rem; }
   .phase .letter {
     flex: 0 0 2.4rem; height: 2.4rem; border-radius: 50%; text-align: center;
@@ -66,16 +107,19 @@
   .l-done { background: var(--done); }
   .l-now { background: var(--now); }
   .l-later { background: var(--later); }
+
   .principle {
     border-left: 4px solid var(--accent); padding: .7rem 1rem; margin-top: 1.5rem;
     background: var(--card); border-radius: 0 10px 10px 0; color: var(--muted);
     font-size: .95rem;
   }
-  .stores { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .5rem; }
-  .store {
-    border: 1px dashed var(--line); border-radius: 8px; padding: .4rem .7rem;
-    font-size: .85rem; color: var(--muted);
-  }
+  .scroll { overflow-x: auto; }
+
+  /* Session log */
+  ul.log { list-style: none; padding: 0; font-size: .9rem; }
+  ul.log li { padding: .35rem 0 .35rem 1.2rem; position: relative; border-left: 2px solid var(--line); margin-left:.4rem; }
+  ul.log li::before { content:""; position:absolute; left:-.32rem; top:.72rem; width:.55rem; height:.55rem; border-radius:50%; background: var(--accent); }
+  ul.log .when { color: var(--muted); font-weight:600; }
 </style>
 </head>
 <body>
@@ -92,23 +136,73 @@
     <li>Python skeleton: <code>src/orca</code> · README · requirements <span class="when">— Jul 3</span></li>
     <li>Privacy fence: personal/plan files git-ignored, verified <span class="when">— Jul 3</span></li>
     <li>Public GitHub repo live: <strong>github.com/Walids77/ORCA</strong> <span class="when">— Jul 3</span></li>
+    <li>Read the real sample file <code>OB7ola.xlsx</code>: 6 tidy sheets, real biz data <span class="when">— Jul 3</span></li>
+    <li>Old <code>file_processor.py</code> reviewed + judged (good ideas, weak core) <span class="when">— Jul 3</span></li>
+    <li><strong>New Excel-processor design agreed</strong> (doorman → 7 stages → 3 stores) <span class="when">— Jul 3</span></li>
   </ul>
 </div>
 
+<!-- ============ ACTIVE WORK: INGESTION DESIGN ============ -->
+<h2>🔬 Building now — the ingestion tool <span class="badge b-now">IN PROGRESS</span></h2>
+
+<div class="card">
+  <p style="margin-bottom:.9rem"><strong>Step 1 — The doorman.</strong> One entry that detects the file
+  type (extension <em>and</em> real content) and routes to the right specialist.</p>
+  <div class="scroll">
+  <div class="flow" style="min-width:520px">
+    <div class="node">📥 file arrives <small>upload / local path</small></div>
+    <div class="arrow">▼</div>
+    <div class="node" style="border-color:var(--now)">🚪 DOORMAN — detect type <small>checks extension + magic bytes</small></div>
+    <div class="arrow">▼</div>
+    <div class="branch">
+      <div class="chip" style="border-color:var(--now)">📊 EXCEL<small>building fully</small></div>
+      <div class="chip muted">📄 PDF<small>stub for now</small></div>
+      <div class="chip muted">🖼️ IMAGE<small>stub for now</small></div>
+      <div class="chip muted">❔ unknown<small>clean error, no crash</small></div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<div class="card">
+  <p style="margin-bottom:.7rem"><strong>Step 2 — Inside the Excel specialist.</strong>
+  7 stages turn one messy-tolerant spreadsheet into clean, accurate data.</p>
+  <div class="pipe">
+    <div class="step"><div class="num">1</div><div class="txt"><b>Open &amp; inventory</b><br><span>list the sheets, read each grid, trim empty trailing rows <em>(built + tested ✓)</em></span></div></div>
+    <div class="stepline"></div>
+    <div class="step"><div class="num">2</div><div class="txt"><b>Find the table(s)</b><br><span>a sheet can hold more than one block — cut at blank rows, keep the main table, set side blocks (e.g. a "Fast Calculation" scratch box) aside by matching column types <em>(built + tested ✓)</em></span></div></div>
+    <div class="stepline"></div>
+    <div class="step"><div class="num">3</div><div class="txt"><b>Read with types</b><br><span>dates=dates, numbers=numbers; "NA" and blank → proper empty <em>(built + tested ✓)</em></span></div></div>
+    <div class="stepline"></div>
+    <div class="step"><div class="num">4</div><div class="txt"><b>Flag total rows</b><br><span>mark "Total / Average" rows so sums never double-count — proven: data rows re-summed to the sheet's own Total, exactly <em>(built + tested ✓)</em></span></div></div>
+    <div class="stepline"></div>
+    <div class="step"><div class="num">5</div><div class="txt"><b>Understand columns</b><br><span>tag each column (meaning + aliases) + measure its real data type → "profit" later finds "Net Profit" <em>(built + tested ✓)</em></span></div></div>
+    <div class="stepline"></div>
+    <div class="step"><div class="num">6</div><div class="txt"><b>Split into two</b><br><span>same table → exact-number path + meaning path</span></div></div>
+    <div class="stepline"></div>
+    <div class="step"><div class="num">7</div><div class="txt"><b>Store</b><br><span>write to the three stores below</span></div></div>
+  </div>
+</div>
+
+<div class="card">
+  <p style="margin-bottom:.5rem"><strong>Step 3 — One Excel becomes three things</strong> (the food the brain eats):</p>
+  <div class="stores">
+    <div class="store s-sql"><b>📊 SQL rows</b><small>SQLite now → Postgres later. Typed columns, 1 table/sheet. <em>Exact numbers — the AI asks SQL, never guesses.</em></small></div>
+    <div class="store s-vec"><b>🧠 Vector chunks</b><small>Chroma now → pgvector later. 1 row = 1 chunk + a <em>pointer home</em> (file→sheet→row) for citations.</small></div>
+    <div class="store s-file"><b>📁 Raw file copy</b><small>local now → S3 later. Plus a manifest: what / when / sheets / row-counts / checksum.</small></div>
+  </div>
+  <p style="margin-top:.7rem;color:var(--muted);font-size:.88rem">✔️ <strong>Accuracy test:</strong> the totals SQL computes must equal the totals in the Excel — else ingestion failed, loudly.</p>
+</div>
+
+<!-- ============ ROADMAP ============ -->
 <h2>🗺️ The plan (each layer proven before the next sits on it)</h2>
 
 <div class="card phase">
   <div class="letter l-now">A</div>
   <div class="body">
-    <h3>Give ORCA data — ingestion <span class="badge b-now">NEXT</span></h3>
-    <p>Port the Excel extractor from old ORCA (per-file approval). One real Excel becomes
-    three things on the PC — the food the brain eats:</p>
-    <div class="stores">
-      <div class="store">📊 SQL rows → <strong>SQLite</strong> (exact numbers)</div>
-      <div class="store">🧠 Vectors → <strong>ChromaDB</strong> (meaning/search)</div>
-      <div class="store">📁 Stored copy of the file</div>
-    </div>
-    <p style="margin-top:.5rem">Test: did the data arrive intact? (totals in SQL = totals in the Excel)</p>
+    <h3>Give ORCA data — ingestion <span class="badge b-now">NOW</span></h3>
+    <p>The doorman + Excel processor above. One real Excel → SQL rows + vectors + stored file.
+    Test: totals in SQL = totals in the Excel.</p>
   </div>
 </div>
 <div class="connector"></div>
@@ -120,8 +214,7 @@
     <p>Node by node: a router reads the question and picks a path — answer directly /
     one simple lookup / decompose into sub-questions (2D model: parallel branches +
     dependent steps) — then combines results into one answer with citations.
-    Built in from day one: conversation memory + tracing (a log of every step,
-    to find exactly where a wrong answer went wrong).</p>
+    Built in from day one: conversation memory + tracing.</p>
   </div>
 </div>
 <div class="connector"></div>
@@ -130,10 +223,9 @@
   <div class="letter l-later">C</div>
   <div class="body">
     <h3>Prove it — terminal testing + eval harness <span class="badge b-later">LATER</span></h3>
-    <p>No frontend yet: type a question in the terminal, read the answer. Grade with the
-    eval harness — 5–10 questions with known answers, real numbers. Two grades:
-    the <em>result</em> (right answer?) and the <em>process</em> (right database? how many
-    steps? what cost?). Retrieval quality is graded on its own, first.</p>
+    <p>No frontend yet: type a question, read the answer. Grade with 5–10 known-answer
+    questions. Two grades: the <em>result</em> (right answer?) and the <em>process</em>
+    (right database? how many steps? what cost?).</p>
   </div>
 </div>
 <div class="connector"></div>
@@ -151,9 +243,9 @@
   <div class="letter l-later">E</div>
   <div class="body">
     <h3>AWS — one service at a time <span class="badge b-later">LATER</span></h3>
-    <p>Each piece added only when the app actually needs it, taught at that moment:
-    <strong>S3</strong> (files) · <strong>RDS Postgres + pgvector</strong> (replaces SQLite + ChromaDB in one DB) ·
-    <strong>Fargate</strong> (runs the backend) · <strong>Cognito</strong> (login) · <strong>Bedrock</strong> (Claude).</p>
+    <p>Each piece added only when the app needs it:
+    <strong>S3</strong> (files) · <strong>RDS Postgres + pgvector</strong> (replaces SQLite + Chroma in one DB) ·
+    <strong>Fargate</strong> (backend) · <strong>Cognito</strong> (login) · <strong>Bedrock</strong> (Claude).</p>
   </div>
 </div>
 
@@ -161,6 +253,16 @@
   <strong>The principle behind the order:</strong> the logic decides the infrastructure.
   Prove the brain cheap and local first — AWS money and effort only go to something
   that already works. Data in → search works → brain reasons.
+</div>
+
+<!-- ============ SESSION LOG ============ -->
+<h2>📓 Session log</h2>
+<div class="card">
+  <ul class="log">
+    <li><span class="when">Jul 3 — Session 2 (build):</span> Built + tested the <b>doorman</b> (type by content, not name) and <b>Excel stages 1–5</b> on the real file: open → block-detection (kept a "Fast Calculation" mini-table out of the numbers) → typed read → flag Total rows → tag columns. <b>Accuracy proven:</b> re-summing the data rows hit the sheet's own Total exactly (5,110.79). Whole workbook in ~1s. Next: stages 6–7 (write to the three stores).</li>
+    <li><span class="when">Jul 3 — Session 2 (design):</span> Reviewed old <code>file_processor.py</code>, checked 2026 industry practice, inspected the real <code>OB7ola.xlsx</code> (6 sheets), and agreed the new Excel-processor design: doorman routing → 7-stage pipeline → 3 stores.</li>
+    <li><span class="when">Jul 3 — Session 1:</span> Fresh git repo + Python skeleton + privacy fence; public repo live at github.com/Walids77/ORCA; sample Excel added.</li>
+  </ul>
 </div>
 
 </body>
