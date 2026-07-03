@@ -21,3 +21,11 @@ specialist. The Excel specialist turns a workbook into three linked stores:
 **SQL** (exact numbers, one typed table per sheet), **vectors** (semantic search over
 each row), and a **raw file copy + manifest** — every record carries a pointer home
 (sheet + row) for citations and a content hash for cheap incremental re-uploads.
+
+## How this was built
+**Designed and directed by Walid Semaan — the system designer.** Walid defines the
+architecture and creates the logic, brings his own research, and drives every decision.
+The working method: Claude Code (AI) suggests options and implements the chosen approach
+in code; Walid reviews the options and picks the direction, tests each result, and makes
+the final call on the product. In short — **Walid designs the system and owns the
+decisions; the AI writes the code under his direction and review.**
