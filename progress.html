@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORCA — Progress</title>
+<style>
+  :root {
+    --bg: #f6f8fa; --card: #ffffff; --ink: #1f2328; --muted: #59636e;
+    --line: #d1d9e0; --done: #1a7f37; --done-bg: #dafbe1;
+    --now: #9a6700; --now-bg: #fff8c5; --later: #59636e; --later-bg: #eff2f5;
+    --accent: #0969da;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117; --card: #161b22; --ink: #e6edf3; --muted: #9198a1;
+      --line: #30363d; --done: #3fb950; --done-bg: #12261e;
+      --now: #d29922; --now-bg: #272115; --later: #9198a1; --later-bg: #21262d;
+      --accent: #4493f8;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font-family: "Segoe UI", system-ui, sans-serif; background: var(--bg);
+    color: var(--ink); line-height: 1.55; padding: 2rem 1rem; max-width: 900px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 1.7rem; margin-bottom: .2rem; }
+  .sub { color: var(--muted); margin-bottom: 2rem; }
+  h2 { font-size: 1.15rem; margin: 2rem 0 .8rem; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 1rem 1.2rem; margin-bottom: .7rem;
+  }
+  .badge {
+    display: inline-block; font-size: .72rem; font-weight: 600; padding: .1rem .55rem;
+    border-radius: 99px; vertical-align: middle; margin-left: .5rem;
+  }
+  .b-done  { color: var(--done);  background: var(--done-bg); }
+  .b-now   { color: var(--now);   background: var(--now-bg); }
+  .b-later { color: var(--later); background: var(--later-bg); }
+
+  /* Done timeline */
+  ul.done-list { list-style: none; padding: 0; }
+  ul.done-list li {
+    padding: .45rem 0 .45rem 1.6rem; position: relative; border-left: 2px solid var(--done);
+    margin-left: .5rem;
+  }
+  ul.done-list li::before {
+    content: "✓"; position: absolute; left: -.62rem; top: .5rem;
+    background: var(--done); color: #fff; width: 1.1rem; height: 1.1rem;
+    border-radius: 50%; font-size: .7rem; text-align: center; line-height: 1.1rem;
+  }
+  ul.done-list .when { color: var(--muted); font-size: .8rem; }
+
+  /* Pipeline diagram */
+  .phase { display: flex; gap: 1rem; }
+  .phase .letter {
+    flex: 0 0 2.4rem; height: 2.4rem; border-radius: 50%; text-align: center;
+    line-height: 2.4rem; font-weight: 700; font-size: 1.05rem; color: #fff;
+  }
+  .phase .body { flex: 1; }
+  .phase h3 { font-size: 1rem; margin-bottom: .25rem; }
+  .phase p { color: var(--muted); font-size: .92rem; }
+  .connector { width: 2px; height: 1.1rem; background: var(--line); margin-left: 1.7rem; }
+  .l-done { background: var(--done); }
+  .l-now { background: var(--now); }
+  .l-later { background: var(--later); }
+  .principle {
+    border-left: 4px solid var(--accent); padding: .7rem 1rem; margin-top: 1.5rem;
+    background: var(--card); border-radius: 0 10px 10px 0; color: var(--muted);
+    font-size: .95rem;
+  }
+  .stores { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .5rem; }
+  .store {
+    border: 1px dashed var(--line); border-radius: 8px; padding: .4rem .7rem;
+    font-size: .85rem; color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<h1>🐋 ORCA — Progress</h1>
+<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 3, 2026</strong></p>
+
+<h2>✅ Done so far</h2>
+<div class="card">
+  <ul class="done-list">
+    <li>Clean project folder created; plan &amp; memory files moved in <span class="when">— Jul 1</span></li>
+    <li>Build sequence locked: brain-first · local-first · AWS last <span class="when">— Jul 2</span></li>
+    <li>Fresh git repo started (history never touched private data) <span class="when">— Jul 3</span></li>
+    <li>Python skeleton: <code>src/orca</code> · README · requirements <span class="when">— Jul 3</span></li>
+    <li>Privacy fence: personal/plan files git-ignored, verified <span class="when">— Jul 3</span></li>
+    <li>Public GitHub repo live: <strong>github.com/Walids77/ORCA</strong> <span class="when">— Jul 3</span></li>
+  </ul>
+</div>
+
+<h2>🗺️ The plan (each layer proven before the next sits on it)</h2>
+
+<div class="card phase">
+  <div class="letter l-now">A</div>
+  <div class="body">
+    <h3>Give ORCA data — ingestion <span class="badge b-now">NEXT</span></h3>
+    <p>Port the Excel extractor from old ORCA (per-file approval). One real Excel becomes
+    three things on the PC — the food the brain eats:</p>
+    <div class="stores">
+      <div class="store">📊 SQL rows → <strong>SQLite</strong> (exact numbers)</div>
+      <div class="store">🧠 Vectors → <strong>ChromaDB</strong> (meaning/search)</div>
+      <div class="store">📁 Stored copy of the file</div>
+    </div>
+    <p style="margin-top:.5rem">Test: did the data arrive intact? (totals in SQL = totals in the Excel)</p>
+  </div>
+</div>
+<div class="connector"></div>
+
+<div class="card phase">
+  <div class="letter l-later">B</div>
+  <div class="body">
+    <h3>Build the brain — orchestrator on LangGraph <span class="badge b-later">LATER</span></h3>
+    <p>Node by node: a router reads the question and picks a path — answer directly /
+    one simple lookup / decompose into sub-questions (2D model: parallel branches +
+    dependent steps) — then combines results into one answer with citations.
+    Built in from day one: conversation memory + tracing (a log of every step,
+    to find exactly where a wrong answer went wrong).</p>
+  </div>
+</div>
+<div class="connector"></div>
+
+<div class="card phase">
+  <div class="letter l-later">C</div>
+  <div class="body">
+    <h3>Prove it — terminal testing + eval harness <span class="badge b-later">LATER</span></h3>
+    <p>No frontend yet: type a question in the terminal, read the answer. Grade with the
+    eval harness — 5–10 questions with known answers, real numbers. Two grades:
+    the <em>result</em> (right answer?) and the <em>process</em> (right database? how many
+    steps? what cost?). Retrieval quality is graded on its own, first.</p>
+  </div>
+</div>
+<div class="connector"></div>
+
+<div class="card phase">
+  <div class="letter l-later">D</div>
+  <div class="body">
+    <h3>The doorway — local web frontend <span class="badge b-later">LATER</span></h3>
+    <p>Login · upload / view / delete files · a prompt box that talks to the proven brain.</p>
+  </div>
+</div>
+<div class="connector"></div>
+
+<div class="card phase">
+  <div class="letter l-later">E</div>
+  <div class="body">
+    <h3>AWS — one service at a time <span class="badge b-later">LATER</span></h3>
+    <p>Each piece added only when the app actually needs it, taught at that moment:
+    <strong>S3</strong> (files) · <strong>RDS Postgres + pgvector</strong> (replaces SQLite + ChromaDB in one DB) ·
+    <strong>Fargate</strong> (runs the backend) · <strong>Cognito</strong> (login) · <strong>Bedrock</strong> (Claude).</p>
+  </div>
+</div>
+
+<div class="principle">
+  <strong>The principle behind the order:</strong> the logic decides the infrastructure.
+  Prove the brain cheap and local first — AWS money and effort only go to something
+  that already works. Data in → search works → brain reasons.
+</div>
+
+</body>
+</html>
