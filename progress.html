@@ -125,7 +125,7 @@
 <body>
 
 <h1>🐋 ORCA — Progress</h1>
-<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 3, 2026</strong></p>
+<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 4, 2026</strong></p>
 
 <h2>✅ Done so far</h2>
 <div class="card">
@@ -178,18 +178,18 @@
     <div class="stepline"></div>
     <div class="step"><div class="num">5</div><div class="txt"><b>Understand columns</b><br><span>tag each column (meaning + aliases) + measure its real data type → "profit" later finds "Net Profit" <em>(built + tested ✓)</em></span></div></div>
     <div class="stepline"></div>
-    <div class="step"><div class="num">6</div><div class="txt"><b>Split into two</b><br><span>same table → exact-number path + meaning path</span></div></div>
+    <div class="step"><div class="num">6</div><div class="txt"><b>Split into two</b><br><span>same table → exact-number rows + meaning chunks, each with a row fingerprint (hash) for incremental updates <em>(built + tested ✓)</em></span></div></div>
     <div class="stepline"></div>
-    <div class="step"><div class="num">7</div><div class="txt"><b>Store</b><br><span>write to the three stores below</span></div></div>
+    <div class="step"><div class="num">7</div><div class="txt"><b>Store</b><br><span>write to all three stores below <em>(built + tested ✓)</em></span></div></div>
   </div>
 </div>
 
 <div class="card">
   <p style="margin-bottom:.5rem"><strong>Step 3 — One Excel becomes three things</strong> (the food the brain eats):</p>
   <div class="stores">
-    <div class="store s-sql"><b>📊 SQL rows</b><small>SQLite now → Postgres later. Typed columns, 1 table/sheet. <em>Exact numbers — the AI asks SQL, never guesses.</em></small></div>
-    <div class="store s-vec"><b>🧠 Vector chunks</b><small>Chroma now → pgvector later. 1 row = 1 chunk + a <em>pointer home</em> (file→sheet→row) for citations.</small></div>
-    <div class="store s-file"><b>📁 Raw file copy</b><small>local now → S3 later. Plus a manifest: what / when / sheets / row-counts / checksum.</small></div>
+    <div class="store s-sql"><b>📊 SQL rows ✓</b><small>SQLite now → Postgres later. Typed table per sheet + tenant/citation/hash columns. Exact numbers proven (SUM matched the sheet's Total); re-upload doesn't duplicate. <em>(built + tested ✓)</em></small></div>
+    <div class="store s-vec"><b>🧠 Vector chunks ✓</b><small>Chroma + local model (all-MiniLM) now → Bedrock Titan V2 + pgvector later (one-line swap). 967 chunks; meaning-search returns the right rows + citations; re-upload doesn't duplicate. <em>(built + tested ✓)</em></small></div>
+    <div class="store s-file"><b>📁 Raw file copy ✓</b><small>local now → S3 later. Manifest + content hash → identical re-upload is skipped free. <em>(built + tested ✓)</em></small></div>
   </div>
   <p style="margin-top:.7rem;color:var(--muted);font-size:.88rem">✔️ <strong>Accuracy test:</strong> the totals SQL computes must equal the totals in the Excel — else ingestion failed, loudly.</p>
 </div>
@@ -259,7 +259,8 @@
 <h2>📓 Session log</h2>
 <div class="card">
   <ul class="log">
-    <li><span class="when">Jul 3 — Session 2 (build):</span> Built + tested the <b>doorman</b> (type by content, not name) and <b>Excel stages 1–5</b> on the real file: open → block-detection (kept a "Fast Calculation" mini-table out of the numbers) → typed read → flag Total rows → tag columns. <b>Accuracy proven:</b> re-summing the data rows hit the sheet's own Total exactly (5,110.79). Whole workbook in ~1s. Next: stages 6–7 (write to the three stores).</li>
+    <li><span class="when">Jul 4 — Session 2 (stores):</span> Built + tested all <b>three stores</b> (stages 6–7): 📊 SQL (typed table/sheet, tenant+citation+hash columns, exact SUM proven, no re-upload dupes) · 📁 file copy + manifest + content-hash skip · 🧠 vectors (Chroma + local all-MiniLM, 967 chunks, meaning-search returns right rows + citations). Decided update strategy = <b>upload-based + incremental (hash-diff)</b>; embedder = local now → <b>Bedrock Titan V2</b> final (eval Titan vs Cohere-multilingual on the real mixed-language data). Next: the agent brain (Phase B).</li>
+    <li><span class="when">Jul 3 — Session 2 (build):</span> Built + tested the <b>doorman</b> (type by content, not name) and <b>Excel stages 1–5</b> on the real file: open → block-detection (kept a "Fast Calculation" mini-table out of the numbers) → typed read → flag Total rows → tag columns. <b>Accuracy proven:</b> re-summing the data rows hit the sheet's own Total exactly (5,110.79).</li>
     <li><span class="when">Jul 3 — Session 2 (design):</span> Reviewed old <code>file_processor.py</code>, checked 2026 industry practice, inspected the real <code>OB7ola.xlsx</code> (6 sheets), and agreed the new Excel-processor design: doorman routing → 7-stage pipeline → 3 stores.</li>
     <li><span class="when">Jul 3 — Session 1:</span> Fresh git repo + Python skeleton + privacy fence; public repo live at github.com/Walids77/ORCA; sample Excel added.</li>
   </ul>

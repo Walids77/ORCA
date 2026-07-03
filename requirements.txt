@@ -1,2 +1,4 @@
 # ORCA dependencies — added one at a time, as each piece of the build needs them.
-# (Empty on purpose for now: the skeleton has no code yet.)
+
+openpyxl        # read Excel workbooks (the ingestion / extraction stage)
+chromadb        # local vector store + built-in embedding model (meaning search)
