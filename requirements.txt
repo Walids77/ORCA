@@ -2,3 +2,4 @@
 
 openpyxl        # read Excel workbooks (the ingestion / extraction stage)
 chromadb        # local vector store + built-in embedding model (meaning search)
+docling         # PDF extractor: structure-preserving text + tables + OCR/images

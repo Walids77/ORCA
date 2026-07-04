@@ -2,6 +2,39 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-04 — Session 3: PDF ingestion — extractor + prose chunker + end-to-end retrieval
+- **Housekeeping first:** gave ORCA its own **virtualenv** (`.venv`, git-ignored); all
+  deps now install into the box → ORCA can no longer disturb global Python. Added
+  `docling` to `requirements.txt`.
+- **Research-first:** checked 2026 best practice for PDF/OCR extraction + chunking —
+  structure-aware ~500-token chunks + ~12% overlap + hierarchical (parent-child) +
+  metadata per chunk; tables are the hardest element; layout-aware parsing matters.
+- **PDF extractor** (`ingest/pdf_processor.py`): chose **Docling** (open-source,
+  layout-aware) over old ORCA's 3 glued libraries. Returns a `PdfExtract` = tables (grids
+  + page) + labelled text blocks + page numbers + markdown. `max_pages` via `page_range`.
+- **Tested on 4 real PDFs:** salary slip + CV clean; PO = 7 page-tables (numbers present,
+  headers inconsistent → table-tidy work); catalog (品牌, 37p, mixed-language) = page 1 a
+  clean table, pages 2–3 fragmented (the hard case, to eval/improve later).
+- **Prose chunker** (`ingest/records.py::build_pdf_chunks`): our own transparent code —
+  heading-grouped, ~500 tokens, ~12% overlap, splits oversized blocks on sentences, never
+  crosses a heading. Metadata card per chunk: `section`, `section_page`, `doc_title`,
+  `parent_id` (hierarchical-ready), `page`. Docling's HybridChunker kept for a later eval.
+- **Fixed a real bug:** authors were becoming fake one-line "sections" (Docling tags author
+  names as headers). New rule groups the title + all authors into ONE front-matter chunk
+  (front matter = everything before the first real heading); also records which page each
+  chapter starts on (`section_page`) so "which page is chapter X?" is answerable.
+- **End-to-end milestone** (public test file `data/agentic_rag_survey.pdf`, arXiv 2501.09136):
+  extract → embed (MiniLM/Chroma, via new `vector_store.store_pdf`) → query. **3/4 questions
+  dead-on** with section + page citations.
+- **Lesson logged:** pure semantic search is weak on *metadata* questions ("who are the
+  authors?") — the author chunk ranked ~4th, still inside top-5 so an answer step recovers
+  it; clean fixes are already on the roadmap (hybrid BM25 #15, Titan embedder = an eval case).
+- **Decision confirmed:** swapping the embedder later won't change the extract/chunk/metadata
+  logic — the embedder is a swappable plug; a swap = re-embed + maybe re-tune chunk size.
+- **Next session:** build the **retrieval-accuracy eval** (known-answer scorecard, include the
+  author case), then the **table→SQL tidy** stage (headers across pages, number typing, total-row
+  flagging — reuses the Excel logic).
+
 ## 2026-07-04 — Session 2: Excel ingestion pipeline (doorman → 7 stages → 3 stores)
 - **Doorman** (`ingest/router.py`): detects file type by real content (magic bytes),
   not just the extension, and routes to the right specialist. PDF/image are stubs.

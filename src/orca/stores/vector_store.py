@@ -18,7 +18,7 @@ import logging
 import chromadb
 from chromadb.utils import embedding_functions
 
-from orca.ingest.records import build_chunks
+from orca.ingest.records import build_chunks, build_pdf_chunks
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +62,24 @@ class VectorStore:
                 metadatas=[c["metadata"] for c in chunks],
             )
         logger.info("Embedded %d chunk(s) for %s/%s", len(chunks), company_id, file_id)
+        return len(chunks)
+
+    def store_pdf(self, company_id: str, file_id: str, extract) -> int:
+        """Embed + store every PROSE chunk of a PDF. Returns the chunk count.
+
+        Same wholesale-replace pattern as store_workbook, but builds the chunks
+        with the PDF prose chunker (heading-aware + metadata). PDF tables that go
+        to SQL are handled separately by the table→SQL stage, not here.
+        """
+        chunks = build_pdf_chunks(extract, company_id, file_id)
+        self.collection.delete(where=_tenant_filter(company_id, file_id))
+        if chunks:
+            self.collection.add(
+                ids=[c["id"] for c in chunks],
+                documents=[c["text"] for c in chunks],
+                metadatas=[c["metadata"] for c in chunks],
+            )
+        logger.info("Embedded %d PDF chunk(s) for %s/%s", len(chunks), company_id, file_id)
         return len(chunks)
 
     def search(self, query: str, company_id: str | None = None,

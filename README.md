@@ -9,7 +9,7 @@ and returns exact numbers, citations, and business explanations.
 > LangGraph), tested locally, then deployed to AWS piece by piece.
 
 ## Roadmap
-1. Local ingestion: a file → SQL rows + vectors + stored copy — **Excel done ✅ · PDF next**
+1. Local ingestion: a file → SQL rows + vectors + stored copy — **Excel done ✅ · PDF prose done ✅ · PDF number-tables next**
 2. Agent brain (orchestrator) on LangGraph
 3. Heavy testing / eval harness in the terminal (incl. retrieval accuracy)
 4. Local web frontend (login · upload · ask)
@@ -21,6 +21,28 @@ specialist. The Excel specialist turns a workbook into three linked stores:
 **SQL** (exact numbers, one typed table per sheet), **vectors** (semantic search over
 each row), and a **raw file copy + manifest** — every record carries a pointer home
 (sheet + row) for citations and a content hash for cheap incremental re-uploads.
+
+The **PDF** specialist uses [Docling](https://github.com/docling-project/docling)
+(layout-aware) to extract text and tables. Prose is split into **structure-aware,
+heading-grouped chunks** (~500 tokens, ~12% overlap) — each chunk tagged with its
+section, page, and document title for citations — then embedded for semantic search.
+Number-tables (invoices, orders) route to SQL like Excel (next build step).
+
+## Setup / run (local)
+ORCA runs in its own virtual environment so its packages never disturb your global
+Python.
+
+```bash
+python -m venv .venv                       # create the sealed environment
+.venv\Scripts\activate                     # activate it (Windows)
+pip install -r requirements.txt            # install ORCA's dependencies
+
+# try the PDF extractor on a file:
+python -m orca.ingest.pdf_processor "data/your-file.pdf"
+```
+
+> First PDF run downloads Docling's layout/OCR models (~300 MB) once, then caches them.
+> Put local test files in `data/` (git-ignored — never committed).
 
 ## How this was built
 **Designed and directed by Walid Semaan — the system designer.** Walid defines the
