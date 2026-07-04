@@ -90,10 +90,14 @@ def build_chunks(extract, company_id: str, file_id: str) -> list[dict]:
 # ~12% overlap. This is the 2026 best-practice shape (recursive/structure-aware +
 # overlap + a metadata card), and it is deliberately OUR own transparent code so
 # we can read it and eval-grade it (Docling's built-in HybridChunker is kept as a
-# later comparison). Tables are NOT handled here — they go to the table→SQL stage.
+# later comparison). Tables ARE handled here now — embedded as text for meaning
+# search; number-tables ALSO go to the table→SQL stage later (for exact math).
 
 # Docling block labels that are NOISE for retrieval — dropped before chunking.
-_PDF_NOISE_LABELS = {"page_header", "page_footer", "footnote", "caption"}
+# NOTE: "caption" is deliberately NOT here anymore. A figure/table caption
+# ("Figure 3: the corrective RAG loop") is the cheap way to make a DIAGRAM
+# searchable — it describes a picture we can't otherwise embed. We keep it.
+_PDF_NOISE_LABELS = {"page_header", "page_footer", "footnote"}
 
 # Target chunk size + overlap, measured in ESTIMATED tokens (~4 chars per token).
 _TARGET_TOKENS = 500
@@ -263,14 +267,66 @@ def _emit_section_chunks(out: list[dict], pieces: list[tuple[str, int]], section
     flush()
 
 
+def _table_to_text_chunks(table) -> list[str]:
+    """Render one table as embedding-readable text, split so no chunk is oversized.
+
+    Each row becomes "col: value; col: value" so the cell VALUES keep their meaning
+    (a bare grid embeds poorly). Every table gets a text copy here so meaning-search
+    can find word-tables AND the text of number-tables; number-tables ALSO go to SQL
+    in the later table→tidy stage — that's the "both" for exact math + meaning.
+    """
+    header = ("Columns: " + " | ".join(table.columns)) if table.columns else ""
+    rows: list[str] = []
+    for row in table.rows:
+        cells = "; ".join(f"{c}: {v}" for c, v in row.items() if str(v).strip())
+        if cells:
+            rows.append(cells)
+
+    # pack rows into <=target-size groups, each repeating the header for context
+    out: list[str] = []
+    cur: list[str] = []
+    cur_tokens = _estimate_tokens(header)
+    for rt in rows:
+        t = _estimate_tokens(rt)
+        if cur and cur_tokens + t > _TARGET_TOKENS:
+            out.append("\n".join([header, *cur]).strip())
+            cur, cur_tokens = [], _estimate_tokens(header)
+        cur.append(rt)
+        cur_tokens += t
+    if cur:
+        out.append("\n".join([header, *cur]).strip())
+    return out
+
+
+def _emit_table_chunks(out: list[dict], table, doc_title: str,
+                       company_id: str, file_id: str) -> None:
+    """Emit each table as its own text chunk(s), cited to its page."""
+    section = f"Table on page {table.page}"
+    parent_id = f"{company_id}:{file_id}:sec:{_slug(section)}"
+    for text in _table_to_text_chunks(table):
+        idx = len(out)
+        out.append({
+            "id": f"{company_id}:{file_id}:pdf:{idx}",
+            "text": f"[Table] {text}",
+            "metadata": {
+                "company_id": company_id, "file_id": file_id, "source": "pdf",
+                "section": section, "section_page": table.page,
+                "doc_title": doc_title, "parent_id": parent_id,
+                "page": table.page, "pages": str(table.page),
+                "chunk_index": idx, "is_table": True,
+            },
+        })
+
+
 def build_pdf_chunks(extract, company_id: str, file_id: str) -> list[dict]:
     """Turn a PDF's prose into heading-aware, overlapping chunks with metadata.
 
     Walks the text blocks in order, remembering the current section heading and
-    dropping noise (headers/footers/captions). Chunks never cross a heading, so
-    each chunk belongs to exactly one section (clean citations + hierarchy). Each
-    chunk carries a metadata card pointing HOME (file / page / section) plus a
-    parent_id (the section) so hierarchical retrieval can switch on later.
+    dropping noise (headers/footers/footnotes — captions are KEPT). Chunks never
+    cross a heading, so each chunk belongs to exactly one section (clean citations
+    + hierarchy). Each chunk carries a metadata card pointing HOME (file / page /
+    section) plus a parent_id (the section) so hierarchical retrieval can switch on
+    later. Finally, every table is embedded as its own text chunk(s).
     """
     chunks: list[dict] = []
     title = ""                              # document title (first pseudo-heading)
@@ -326,13 +382,24 @@ def build_pdf_chunks(extract, company_id: str, file_id: str) -> list[dict]:
             heading = block.text
             heading_page = block.page
             continue
-        # a content block (paragraph or bullet): split it if it's oversized,
-        # then add its pieces to the current buffer.
-        for piece in _split_oversize(block.text):
+        # a content block (paragraph, bullet, or caption): split it if it's
+        # oversized, then add its pieces to the current buffer.
+        text = block.text
+        if block.label == "caption":
+            # Prefix a cue so "what does figure X show?" embeds close to it — a
+            # bare caption line otherwise reads like a stray sentence.
+            text = f"[Figure/Table caption] {text}"
+        for piece in _split_oversize(text):
             pieces.append((piece, block.page))
     close_current()
 
     if in_frontmatter:                      # doc had no real heading at all
         emit_frontmatter()
+
+    # tables: embed each as text so word-tables (and the text of number-tables)
+    # are searchable. This runs AFTER the prose walk so `title` is known for
+    # citations. Number-tables also go to SQL later — this is the meaning copy.
+    for table in getattr(extract, "tables", []):
+        _emit_table_chunks(chunks, table, title, company_id, file_id)
 
     return chunks

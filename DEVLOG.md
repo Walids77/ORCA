@@ -2,6 +2,36 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-05 — Session 4: retrieval eval (baseline 43%) + captions/tables embedding + Bedrock wiring
+- **Embed more than prose** (`ingest/records.py`): now KEEP captions (tagged
+  `[Figure/Table caption]` — the cheap way to make diagrams searchable) and EMBED every
+  table as text (`col: value; …` rows, own chunk, cited to its page). Clarified the 3
+  content types: number-table → SQL · word-table → text · figure/photo → caption now
+  (vision later); a picture has no structure, so it never goes to SQL.
+- **Embedded the FULL 42-page survey** (Session 3 was only an 8-page peek) into a persistent
+  Chroma store at `data/stores/chroma` (git-ignored). 169 chunks (160 prose · 8 table ·
+  27 caption · 1 front-matter). The 27 captions would've been dropped before.
+- **Built the retrieval eval** (`scripts/run_retrieval_eval.py`): 20 known-answer questions
+  across content · metadata · "not-in-doc" traps · multi-part. Ground truth read from the
+  paper. **Baseline = 8.5/20 (43%)**, graded at retrieval level (right chunk in top-5?),
+  since the LLM answer-writer isn't built yet. Saved to `eval/pdf_retrieval_baseline_2026-07-04.md`.
+- **Diagnosis (the point of the number):** "magnet chunks" (a few generic sections match
+  everything), titled sections that ARE the answer got missed (A7 §10.3, A8 §8), all 5
+  metadata questions failed. → validates hybrid BM25 (#15) + a better embedder — two levers
+  for two different failures (eval decides the combination; research says don't stack blindly).
+- **Read the full survey → saved insights** (`memory/agentic_rag_survey_insights.md`): its
+  §4 workflow patterns = the industry names for Walid's 2D-decomposition; §5.5 Adaptive =
+  recipe for the complexity router; §8 validates the LangGraph+Bedrock stack; §10.3 =
+  "retrieval quality is the bottleneck" (validates doing this eval now).
+- **Started the Bedrock/Titan swap:** installed `boto3`; credentials + admin + region + code
+  all verified working (a `ThrottlingException` proved the call reaches Titan). **Blocked by
+  the account being on the AWS Free Plan**, which fences off Bedrock on-demand (quota 0,
+  "not adjustable"). Real fix = **upgrade to the Paid Plan** (credits carry over, still ~free;
+  needed for RDS/S3/Fargate anyway). Full detail in `memory/aws_bedrock_setup.md`.
+- **Next session:** upgrade AWS → Paid Plan → re-test Titan → if working, run the embedder
+  eval **with Titan** (Walid's pick over a local model) and compare vs the 43% baseline; then
+  hybrid BM25. After retrieval is solid: PDF number-tables → SQL tidy, then the agent brain.
+
 ## 2026-07-04 — Session 3: PDF ingestion — extractor + prose chunker + end-to-end retrieval
 - **Housekeeping first:** gave ORCA its own **virtualenv** (`.venv`, git-ignored); all
   deps now install into the box → ORCA can no longer disturb global Python. Added

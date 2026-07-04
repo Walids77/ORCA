@@ -125,7 +125,7 @@
 <body>
 
 <h1>🐋 ORCA — Progress</h1>
-<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 4, 2026</strong></p>
+<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 5, 2026</strong></p>
 
 <h2>✅ Done so far</h2>
 <div class="card">
@@ -142,6 +142,9 @@
     <li><strong>Excel ingestion built + tested</strong> end-to-end on the real file (SQL + vectors + file) <span class="when">— Jul 4</span></li>
     <li>ORCA given its own <strong>virtualenv</strong> — installs can no longer disturb global Python <span class="when">— Jul 4</span></li>
     <li><strong>PDF prose path built + tested</strong>: Docling extractor → chunker → vectors, retrieval with page citations <span class="when">— Jul 4</span></li>
+    <li><strong>Captions + tables now embedded too</strong> (diagrams &amp; grids searchable, not just prose) <span class="when">— Jul 5</span></li>
+    <li><strong>First eval with a number</strong>: 20 known-answer Qs on the full 42-pg survey → <strong>baseline 43%</strong> (the number to beat) <span class="when">— Jul 5</span></li>
+    <li>AWS Bedrock/Titan wired &amp; verified — blocked only by the account's <strong>Free Plan</strong> (fix = upgrade to Paid) <span class="when">— Jul 5</span></li>
   </ul>
 </div>
 
@@ -159,7 +162,7 @@
     <div class="arrow">▼</div>
     <div class="branch">
       <div class="chip" style="border-color:var(--vec)">📊 EXCEL<small>built ✓</small></div>
-      <div class="chip" style="border-color:var(--now)">📄 PDF<small>prose path ✓ · tables next</small></div>
+      <div class="chip" style="border-color:var(--now)">📄 PDF<small>prose+tables+captions ✓ · →SQL next</small></div>
       <div class="chip muted">🖼️ IMAGE<small>stub for now</small></div>
       <div class="chip muted">❔ unknown<small>clean error, no crash</small></div>
     </div>
@@ -280,6 +283,7 @@
 <h2>📓 Session log</h2>
 <div class="card">
   <ul class="log">
+    <li><span class="when">Jul 5 — Session 4 (eval + Bedrock):</span> Made the PDF chunker embed <b>captions + tables</b> as text too (diagrams &amp; grids now searchable, not just prose). Embedded the <b>full 42-page</b> survey (was an 8-page peek) → 169 chunks. Built the <b>retrieval eval</b>: 20 known-answer questions → <b>baseline 43%</b> (graded: did the right chunk come back?). Diagnosis: a few "magnet" chunks match everything, titled sections that ARE the answer got missed, all 5 metadata Qs failed → validates <b>hybrid BM25 + a better embedder</b>. Read the full survey, saved its insights. Started wiring <b>Bedrock Titan</b> (creds+admin+code all work — a throttle proved the call lands) but the account's <b>Free Plan fences off Bedrock</b> (quota 0); fix = upgrade to Paid Plan (credits cover it). Next: upgrade → test Titan → embedder eval vs 43%.</li>
     <li><span class="when">Jul 4 — Session 3 (PDF):</span> Gave ORCA its own <b>virtualenv</b> (installs can't touch global Python). Built the <b>PDF prose path</b>: <b>Docling</b> layout-aware extractor → our own structure-aware <b>chunker</b> (~500-tok, 12% overlap, heading-grouped, metadata card = section + page + doc-title + parent-id) → vectors. Fixed authors-becoming-fake-sections; now records which page each chapter starts on. <b>Proven end-to-end</b> on a public arXiv survey — 3/4 questions dead-on with section + page citations. Lesson: meaning-search is weak on "who/when/title" metadata questions → hybrid keyword + better embedder, eval-graded. Next: retrieval eval, then PDF number-tables → SQL.</li>
     <li><span class="when">Jul 4 — Session 2 (stores):</span> Built + tested all <b>three stores</b> (stages 6–7): 📊 SQL (typed table/sheet, tenant+citation+hash columns, exact SUM proven, no re-upload dupes) · 📁 file copy + manifest + content-hash skip · 🧠 vectors (Chroma + local all-MiniLM, 967 chunks, meaning-search returns right rows + citations). Decided update strategy = <b>upload-based + incremental (hash-diff)</b>; embedder = local now → <b>Bedrock Titan V2</b> final (eval Titan vs Cohere-multilingual on the real mixed-language data). Next: the agent brain (Phase B).</li>
     <li><span class="when">Jul 3 — Session 2 (build):</span> Built + tested the <b>doorman</b> (type by content, not name) and <b>Excel stages 1–5</b> on the real file: open → block-detection (kept a "Fast Calculation" mini-table out of the numbers) → typed read → flag Total rows → tag columns. <b>Accuracy proven:</b> re-summing the data rows hit the sheet's own Total exactly (5,110.79).</li>
