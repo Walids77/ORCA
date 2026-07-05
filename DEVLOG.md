@@ -2,6 +2,29 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-05 — Session 6: hybrid BM25 retrieval + RRF C-tuning → 43% to 82.5% (embedder unchanged)
+- **Bedrock still blocked.** Re-checked a day after the Paid-Plan upgrade: on-demand quota
+  still 0 for EVERY model (not just Titan). Ran a **ground-truth terminal test** (one Titan
+  `invoke_model`) → `ThrottlingException` (not AccessDenied) = our code/creds/region are
+  correct; only AWS's account-level quota is missing. Confirmed the account is genuinely Paid
+  (real USD billing). **Opened a free AWS Support case `178327435100356`** to enable on-demand.
+- **Walid's call:** the replacement embedder must run on AWS — no local model. So we advanced
+  the embedder-INDEPENDENT retrieval lever instead.
+- **Built hybrid retrieval** (`src/orca/stores/hybrid.py`): BM25 **keyword search** (`rank_bm25`)
+  run alongside the existing meaning search, the two ranked lists fused with **RRF**. Added
+  chunk `id` to `vector_store.search` + an `all_chunks()` helper.
+- **Eval-proven on the survey** (same 20-Q rubric): vector-only **43%** → hybrid **72.5%**.
+  Wins = exact-word / section-title questions (Corrective RAG, Tools & Frameworks, Modular…).
+- **Found + fixed a merge bug:** the title/authors chunk is BM25 rank 1 but vector rank 43 —
+  strong in ONE list only — and the standard RRF setting (`C=60`) buried it. **Lowering C to 5**
+  makes a strong single-list hit surface → rescued authors/title/bottleneck → **82.5%**.
+- **Validated C=5 on a held-out doc** (downloaded a 110-page "Introduction to Economics"
+  module, micro + macro; fresh 20 questions): **18/18 answerable + 2/2 traps ≈ 100%**, and
+  C=5 cost nothing vs C=60. → **adopted C=5 as the default.** Overfitting fear did not
+  materialize. Details: `eval/pdf_retrieval_hybrid_2026-07-05.md`, `eval/econ_retrieval_validation_2026-07-05.md`.
+- **Next:** check the AWS case → Titan embedder eval on top of 82.5%; model-free meanwhile =
+  metadata route + keep footnotes (GitHub-link miss); then reranker/enrichment (need a model).
+
 ## 2026-07-05 — Session 4: retrieval eval (baseline 43%) + captions/tables embedding + Bedrock wiring
 - **Embed more than prose** (`ingest/records.py`): now KEEP captions (tagged
   `[Figure/Table caption]` — the cheap way to make diagrams searchable) and EMBED every

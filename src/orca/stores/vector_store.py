@@ -90,10 +90,26 @@ class VectorStore:
             where=_tenant_filter(company_id, file_id),
         )
         hits = []
-        for doc, meta, dist in zip(res["documents"][0], res["metadatas"][0],
-                                   res["distances"][0]):
-            hits.append({"text": doc, "metadata": meta, "distance": dist})
+        for cid, doc, meta, dist in zip(res["ids"][0], res["documents"][0],
+                                        res["metadatas"][0], res["distances"][0]):
+            hits.append({"id": cid, "text": doc, "metadata": meta, "distance": dist})
         return hits
+
+    def all_chunks(self, company_id: str | None = None,
+                   file_id: str | None = None) -> list[dict]:
+        """Return EVERY stored chunk (id + text + metadata) for a tenant/file.
+
+        The keyword (BM25) index needs the whole set of texts up front, unlike
+        semantic search which asks Chroma per-query. Used by HybridSearcher.
+        """
+        res = self.collection.get(
+            where=_tenant_filter(company_id, file_id),
+            include=["documents", "metadatas"],
+        )
+        return [
+            {"id": cid, "text": doc, "metadata": meta}
+            for cid, doc, meta in zip(res["ids"], res["documents"], res["metadatas"])
+        ]
 
     def count(self) -> int:
         return self.collection.count()
