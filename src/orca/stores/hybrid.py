@@ -49,10 +49,15 @@ class HybridSearcher:
         self.bm25 = BM25Okapi([_tokenize(c["text"]) for c in self.chunks])
 
     def _bm25_ranked_ids(self, query: str, n: int) -> list[str]:
-        """Top-n chunk ids by keyword match, best first."""
+        """Top-n chunk ids by keyword match, best first.
+
+        A score of 0 means the chunk shares NO word with the query — not a real
+        keyword hit. Those must not enter the fusion, or they collect RRF points
+        just for occupying a rank (and with our low C, a fake rank-1 scores big).
+        """
         scores = self.bm25.get_scores(_tokenize(query))
         order = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)
-        return [self.chunks[i]["id"] for i in order[:n]]
+        return [self.chunks[i]["id"] for i in order[:n] if scores[i] > 0]
 
     def search(self, query: str, k: int = 5, rrf_c: int = RRF_C) -> list[dict]:
         """Hybrid search: fuse semantic + keyword results, return top-k chunks.

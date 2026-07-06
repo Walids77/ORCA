@@ -7,58 +7,124 @@
 <style>
   :root {
     --bg: #f6f8fa; --card: #ffffff; --ink: #1f2328; --muted: #59636e;
-    --line: #d1d9e0; --done: #1a7f37; --done-bg: #dafbe1;
+    --line: #d1d9e0; --done: #1f883d; --done-bg: #dafbe1;
     --now: #9a6700; --now-bg: #fff8c5; --later: #59636e; --later-bg: #eff2f5;
-    --accent: #0969da; --sql: #8250df; --vec: #1f883d; --file: #bc4c00;
+    --accent: #0969da; --accent-soft: #b6d5f5;
+    --sql: #8250df; --vec: #1f883d; --file: #bc4c00;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #0d1117; --card: #161b22; --ink: #e6edf3; --muted: #9198a1;
-      --line: #30363d; --done: #3fb950; --done-bg: #12261e;
-      --now: #d29922; --now-bg: #272115; --later: #9198a1; --later-bg: #21262d;
-      --accent: #4493f8; --sql: #a371f7; --vec: #3fb950; --file: #db6d28;
+      --bg: #10161d; --card: #161d26; --ink: #e6edf3; --muted: #9198a1;
+      --line: #2d3742; --done: #2ea043; --done-bg: #12261e;
+      --now: #d29922; --now-bg: #272115; --later: #9198a1; --later-bg: #1f2731;
+      --accent: #4493f8; --accent-soft: #1d3a5f;
+      --sql: #a371f7; --vec: #2ea043; --file: #db6d28;
     }
   }
   * { box-sizing: border-box; margin: 0; }
   body {
     font-family: "Segoe UI", system-ui, sans-serif; background: var(--bg);
-    color: var(--ink); line-height: 1.55; padding: 2rem 1rem; max-width: 940px;
+    color: var(--ink); line-height: 1.55; padding: 2rem 1rem 4rem; max-width: 960px;
     margin: 0 auto;
   }
-  h1 { font-size: 1.7rem; margin-bottom: .2rem; }
-  .sub { color: var(--muted); margin-bottom: 2rem; }
-  h2 { font-size: 1.15rem; margin: 2.4rem 0 .9rem; }
+  h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -.02em; margin-bottom: .15rem; }
+  .sub { color: var(--muted); margin-bottom: 1.6rem; font-size: .95rem; }
+  h2 {
+    font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em;
+    color: var(--muted); margin: 2.6rem 0 .9rem; display: flex; align-items: center; gap: .6rem;
+  }
+  h2::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .mono { font-family: "Cascadia Code", Consolas, monospace; }
   .card {
-    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
-    padding: 1rem 1.2rem; margin-bottom: .7rem;
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 1.1rem 1.25rem; margin-bottom: .8rem;
   }
   .badge {
-    display: inline-block; font-size: .72rem; font-weight: 600; padding: .1rem .55rem;
-    border-radius: 99px; vertical-align: middle; margin-left: .5rem;
+    display: inline-block; font-size: .7rem; font-weight: 700; padding: .12rem .6rem;
+    border-radius: 99px; vertical-align: middle; margin-left: .5rem; letter-spacing: .03em;
   }
   .b-done  { color: var(--done);  background: var(--done-bg); }
   .b-now   { color: var(--now);   background: var(--now-bg); }
   .b-later { color: var(--later); background: var(--later-bg); }
 
-  /* Done timeline */
-  ul.done-list { list-style: none; padding: 0; }
+  /* ===== HERO DASHBOARD ===== */
+  .dash { display: grid; grid-template-columns: 1.35fr 1fr 1fr; gap: .8rem; }
+  @media (max-width: 760px) { .dash { grid-template-columns: 1fr; } }
+  .tile {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 1rem 1.1rem;
+  }
+  .tile .eyebrow {
+    font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em;
+    color: var(--muted); margin-bottom: .55rem;
+  }
+  .tile .footnote { color: var(--muted); font-size: .78rem; margin-top: .6rem; }
+
+  /* the scoreboard — retrieval accuracy climbing toward the surface */
+  .score-big { font-size: 2.5rem; font-weight: 800; line-height: 1; letter-spacing: -.02em; }
+  .score-big small { font-size: .95rem; font-weight: 600; color: var(--muted); margin-left: .35rem; }
+  .meter {
+    display: flex; gap: 10px; margin-top: 1.7rem;
+    border-top: 2px dashed var(--accent-soft); position: relative;
+  }
+  .meter::before {
+    content: "100% — every test question finds its passage"; position: absolute;
+    top: -1.2rem; right: 0; font-size: .66rem; color: var(--muted);
+  }
+  .meter .bar { flex: 1; display: flex; flex-direction: column; min-width: 0; text-align: center; }
+  .meter .track { height: 96px; display: flex; align-items: flex-end; }
+  .meter .track i {
+    display: block; width: 100%; background: var(--accent-soft);
+    border-radius: 4px 4px 0 0; height: calc(var(--v) * .96px);
+  }
+  .meter .bar.hot .track i { background: var(--accent); }
+  .meter .bar b { font-size: .82rem; font-weight: 700; margin-top: .3rem; }
+  .meter .bar u { text-decoration: none; display: block; font-size: .66rem; color: var(--muted); line-height: 1.25; }
+
+  /* phase stepper */
+  .steps { list-style: none; padding: 0; font-size: .88rem; }
+  .steps li { display: flex; gap: .6rem; padding: .28rem 0; align-items: baseline; }
+  .steps .dot {
+    flex: 0 0 1.35rem; height: 1.35rem; border-radius: 50%; text-align: center;
+    line-height: 1.35rem; font-size: .72rem; font-weight: 800; color: #fff;
+    align-self: center;
+  }
+  .steps .d-done { background: var(--done); }
+  .steps .d-now { background: var(--now); }
+  .steps .d-later { background: var(--later-bg); color: var(--muted); border: 1px solid var(--line); }
+  .steps li.later { color: var(--muted); }
+  .steps b { font-weight: 700; }
+
+  /* three legs */
+  .legs { display: flex; flex-direction: column; gap: .5rem; }
+  .leg {
+    border: 1.5px solid var(--line); border-left-width: 5px; border-radius: 8px;
+    padding: .45rem .7rem; font-size: .85rem; font-weight: 600;
+  }
+  .leg small { display: block; font-weight: 400; color: var(--muted); font-size: .74rem; }
+  .leg.sql { border-left-color: var(--sql); }
+  .leg.vec { border-left-color: var(--vec); }
+  .leg.kw  { border-left-color: var(--accent); }
+
+  /* ===== done timeline ===== */
+  ul.done-list { list-style: none; padding: 0; font-size: .92rem; }
   ul.done-list li {
-    padding: .45rem 0 .45rem 1.6rem; position: relative; border-left: 2px solid var(--done);
+    padding: .4rem 0 .4rem 1.6rem; position: relative; border-left: 2px solid var(--done);
     margin-left: .5rem;
   }
   ul.done-list li::before {
-    content: "✓"; position: absolute; left: -.62rem; top: .5rem;
+    content: "✓"; position: absolute; left: -.62rem; top: .48rem;
     background: var(--done); color: #fff; width: 1.1rem; height: 1.1rem;
     border-radius: 50%; font-size: .7rem; text-align: center; line-height: 1.1rem;
   }
-  ul.done-list .when { color: var(--muted); font-size: .8rem; }
+  ul.done-list .when { color: var(--muted); font-size: .8rem; white-space: nowrap; }
 
-  /* Generic flow diagram bits */
+  /* ===== flow diagram bits (unchanged language: node → arrow → chips) ===== */
   .flow { display: flex; flex-direction: column; align-items: center; }
   .node {
     border: 1.5px solid var(--line); border-radius: 9px; background: var(--card);
     padding: .55rem .9rem; text-align: center; font-size: .9rem; font-weight: 600;
-    max-width: 460px;
+    max-width: 480px;
   }
   .node small { display:block; font-weight: 400; color: var(--muted); font-size: .78rem; margin-top:.15rem; }
   .arrow { color: var(--muted); font-size: 1.1rem; line-height: 1; margin: .28rem 0; }
@@ -70,11 +136,11 @@
   .chip small { display:block; font-weight:400; color: var(--muted); font-size:.75rem; }
   .chip.muted { opacity: .55; border-style: dashed; }
 
-  /* Numbered pipeline */
+  /* numbered pipeline (the Excel stages are a real sequence) */
   .pipe { display: flex; flex-direction: column; gap: 0; }
   .step { display: flex; gap: .8rem; align-items: flex-start; padding: .5rem 0; }
   .step .num {
-    flex: 0 0 1.8rem; height: 1.8rem; border-radius: 50%; background: var(--now);
+    flex: 0 0 1.8rem; height: 1.8rem; border-radius: 50%; background: var(--done);
     color:#fff; font-weight:700; text-align:center; line-height:1.8rem; font-size:.9rem;
   }
   .step .txt { flex:1; }
@@ -82,7 +148,7 @@
   .step .txt span { color: var(--muted); font-size:.86rem; }
   .stepline { width:2px; background: var(--line); height:.5rem; margin-left:.9rem; }
 
-  /* Three stores */
+  /* three stores */
   .stores { display: flex; gap: .7rem; flex-wrap: wrap; margin-top: .3rem; }
   .store {
     flex:1; min-width: 200px; border: 1.5px solid var(--line); border-top-width:4px;
@@ -94,7 +160,7 @@
   .s-vec { border-top-color: var(--vec); }
   .s-file { border-top-color: var(--file); }
 
-  /* Roadmap phases */
+  /* roadmap phases */
   .phase { display: flex; gap: 1rem; }
   .phase .letter {
     flex: 0 0 2.4rem; height: 2.4rem; border-radius: 50%; text-align: center;
@@ -115,18 +181,66 @@
   }
   .scroll { overflow-x: auto; }
 
-  /* Session log */
-  ul.log { list-style: none; padding: 0; font-size: .9rem; }
-  ul.log li { padding: .35rem 0 .35rem 1.2rem; position: relative; border-left: 2px solid var(--line); margin-left:.4rem; }
-  ul.log li::before { content:""; position:absolute; left:-.32rem; top:.72rem; width:.55rem; height:.55rem; border-radius:50%; background: var(--accent); }
-  ul.log .when { color: var(--muted); font-weight:600; }
+  /* session log — collapsible, newest open */
+  details.session {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: .55rem .9rem; margin-bottom: .5rem; font-size: .9rem;
+  }
+  details.session summary {
+    cursor: pointer; font-weight: 700; list-style: none; display: flex; gap: .6rem;
+    align-items: baseline; flex-wrap: wrap;
+  }
+  details.session summary::before { content: "▸"; color: var(--accent); }
+  details.session[open] summary::before { content: "▾"; }
+  details.session summary .when { color: var(--muted); font-weight: 600; font-size: .82rem; }
+  details.session summary:focus-visible { outline: 2px solid var(--accent); border-radius: 6px; }
+  details.session p { margin-top: .55rem; color: var(--ink); }
+  details.session .when { color: var(--muted); font-weight: 600; }
 </style>
 </head>
 <body>
 
 <h1>🐋 ORCA — Progress</h1>
-<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 5, 2026</strong></p>
+<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 6, 2026</strong></p>
 
+<!-- ============ HERO: WHERE ORCA STANDS ============ -->
+<div class="dash">
+  <div class="tile">
+    <div class="eyebrow">Retrieval accuracy — the scoreboard</div>
+    <div class="score-big mono">87.5<small>%&nbsp;· 17.5 / 20 questions</small></div>
+    <div class="meter" role="img" aria-label="Retrieval accuracy climbed from 43% to 87.5% across four evals">
+      <div class="bar" title="Meaning-search only — the number to beat"><span class="track"><i style="--v:43"></i></span><b class="mono">43</b><u>baseline<br>Jul 5</u></div>
+      <div class="bar" title="Added keyword search (BM25), merged with RRF"><span class="track"><i style="--v:72.5"></i></span><b class="mono">72.5</b><u>+ keyword<br>Jul 5</u></div>
+      <div class="bar" title="Tuned the merge constant C to 5 — strong single-list hits surface"><span class="track"><i style="--v:82.5"></i></span><b class="mono">82.5</b><u>merge tuned<br>Jul 5</u></div>
+      <div class="bar hot" title="Zero-score filter + page-1 footnotes as their own chunks"><span class="track"><i style="--v:87.5"></i></span><b class="mono">87.5</b><u>footnote fix<br>Jul 6</u></div>
+    </div>
+    <div class="footnote">Same 20 known-answer questions every time; embedder unchanged — every gain stacks with Titan later. Next lever: the real embedder (waiting on AWS).</div>
+  </div>
+
+  <div class="tile">
+    <div class="eyebrow">Build phases</div>
+    <ul class="steps">
+      <li><span class="dot d-done">✓</span><span><b>A · Ingestion</b> — Excel + PDF → 3 stores, proven</span></li>
+      <li><span class="dot d-now">B</span><span><b>Brain</b> — orchestrator on LangGraph <span class="badge b-now">NEXT</span></span></li>
+      <li class="later"><span class="dot d-later">C</span><span>Prove it — terminal + eval harness</span></li>
+      <li class="later"><span class="dot d-later">D</span><span>Doorway — local web frontend</span></li>
+      <li class="later"><span class="dot d-later">E</span><span>AWS — one service at a time</span></li>
+    </ul>
+    <div class="footnote">The logic decides the infrastructure — AWS money only goes to something that already works.</div>
+  </div>
+
+  <div class="tile">
+    <div class="eyebrow">The brain's three legs — all built ✓</div>
+    <div class="legs">
+      <div class="leg vec">🧠 Meaning search ✓<small>finds "money back" when you ask "refund"</small></div>
+      <div class="leg kw">🔡 Keyword search ✓<small>finds "SKU-4471", a section title, a GitHub link</small></div>
+      <div class="leg sql">📊 Exact-number SQL ✓<small>SUMs are computed, never guessed by the AI</small></div>
+    </div>
+    <div class="footnote">The LangGraph brain (phase B) reads a question and picks which legs to use.</div>
+  </div>
+</div>
+
+<!-- ============ DONE TIMELINE ============ -->
 <h2>✅ Done so far</h2>
 <div class="card">
   <ul class="done-list">
@@ -146,11 +260,14 @@
     <li><strong>First eval with a number</strong>: 20 known-answer Qs on the full 42-pg survey → <strong>baseline 43%</strong> (the number to beat) <span class="when">— Jul 5</span></li>
     <li>AWS Bedrock/Titan wired &amp; verified — blocked only by the account's <strong>Free Plan</strong> (fix = upgrade to Paid) <span class="when">— Jul 5</span></li>
     <li><strong>Hybrid keyword (BM25) + meaning search</strong> built &amp; tuned → retrieval <strong>43% → 82.5%</strong>, validated on a 2nd document <span class="when">— Jul 5</span></li>
+    <li>Fable-5 review vs 2026 best practice: the retrieval design = the industry-standard baseline; found + fixed a <strong>fake-keyword-hit flaw</strong> (zero-score filter) <span class="when">— Jul 6</span></li>
+    <li><strong>Footnote fix</strong>: page-1 footnotes kept as their own small chunks → the GitHub-link question now rank 1 → retrieval <strong>82.5% → 87.5%</strong>, no regressions <span class="when">— Jul 6</span></li>
+    <li><strong>PDF number-tables → SQL built + proven</strong>: 7 page-grids stitched into ONE table, cells typed, summary rows flagged; <strong>SUM(items) = the PDF's own printed total, to the cent</strong> <span class="when">— Jul 6</span></li>
   </ul>
 </div>
 
-<!-- ============ ACTIVE WORK: INGESTION DESIGN ============ -->
-<h2>🔬 Building now — the ingestion tool <span class="badge b-now">IN PROGRESS</span></h2>
+<!-- ============ INGESTION (PHASE A, DONE) ============ -->
+<h2>📥 Phase A — the ingestion tool <span class="badge b-done">DONE</span></h2>
 
 <div class="card">
   <p style="margin-bottom:.9rem"><strong>Step 1 — The doorman.</strong> One entry that detects the file
@@ -159,11 +276,11 @@
   <div class="flow" style="min-width:520px">
     <div class="node">📥 file arrives <small>upload / local path</small></div>
     <div class="arrow">▼</div>
-    <div class="node" style="border-color:var(--now)">🚪 DOORMAN — detect type <small>checks extension + magic bytes</small></div>
+    <div class="node" style="border-color:var(--done)">🚪 DOORMAN — detect type <small>checks extension + magic bytes ✓</small></div>
     <div class="arrow">▼</div>
     <div class="branch">
       <div class="chip" style="border-color:var(--vec)">📊 EXCEL<small>built ✓</small></div>
-      <div class="chip" style="border-color:var(--now)">📄 PDF<small>prose+tables+captions ✓ · →SQL next</small></div>
+      <div class="chip" style="border-color:var(--vec)">📄 PDF<small>prose + captions + tables→SQL ✓</small></div>
       <div class="chip muted">🖼️ IMAGE<small>stub for now</small></div>
       <div class="chip muted">❔ unknown<small>clean error, no crash</small></div>
     </div>
@@ -192,18 +309,18 @@
 </div>
 
 <div class="card">
-  <p style="margin-bottom:.5rem"><strong>Step 3 — One Excel becomes three things</strong> (the food the brain eats):</p>
+  <p style="margin-bottom:.5rem"><strong>Step 3 — One file becomes three things</strong> (the food the brain eats):</p>
   <div class="stores">
-    <div class="store s-sql"><b>📊 SQL rows ✓</b><small>SQLite now → Postgres later. Typed table per sheet + tenant/citation/hash columns. Exact numbers proven (SUM matched the sheet's Total); re-upload doesn't duplicate. <em>(built + tested ✓)</em></small></div>
-    <div class="store s-vec"><b>🧠 Vector chunks ✓</b><small>Chroma + local model (all-MiniLM) now → Bedrock Titan V2 + pgvector later (one-line swap). 967 chunks; meaning-search returns the right rows + citations; re-upload doesn't duplicate. <em>(built + tested ✓)</em></small></div>
-    <div class="store s-file"><b>📁 Raw file copy ✓</b><small>local now → S3 later. Manifest + content hash → identical re-upload is skipped free. <em>(built + tested ✓)</em></small></div>
+    <div class="store s-sql"><b>📊 SQL rows ✓</b><small>SQLite now → Postgres later. Typed table per sheet/PDF-table + tenant/citation/hash columns. Exact numbers proven (SUM matched the document's own total); re-upload doesn't duplicate; stale tables purged on re-ingest.</small></div>
+    <div class="store s-vec"><b>🧠 Vector chunks ✓</b><small>Chroma + local model (all-MiniLM) now → Bedrock Titan V2 + pgvector later (one-line swap). Meaning-search returns the right rows + citations; re-upload doesn't duplicate.</small></div>
+    <div class="store s-file"><b>📁 Raw file copy ✓</b><small>local now → S3 later. Manifest + content hash → identical re-upload is skipped free.</small></div>
   </div>
-  <p style="margin-top:.7rem;color:var(--muted);font-size:.88rem">✔️ <strong>Accuracy test:</strong> the totals SQL computes must equal the totals in the Excel — else ingestion failed, loudly.</p>
+  <p style="margin-top:.7rem;color:var(--muted);font-size:.88rem">✔️ <strong>Accuracy rule:</strong> the totals SQL computes must equal the totals printed in the document — else ingestion failed, loudly.</p>
 </div>
 
 <div class="card">
   <p style="margin-bottom:.7rem"><strong>Step 4 — The PDF specialist.</strong>
-  Same idea as Excel: prose becomes searchable chunks, numbers-tables go to SQL.</p>
+  Same idea as Excel: prose becomes searchable chunks, number-tables go to SQL.</p>
   <div class="scroll">
   <div class="flow" style="min-width:520px">
     <div class="node">📄 PDF arrives</div>
@@ -211,31 +328,117 @@
     <div class="node" style="border-color:var(--vec)">🔎 DOCLING — layout-aware extract <small>keeps a number with its label, a heading a heading (text · tables · OCR) ✓</small></div>
     <div class="arrow">▼</div>
     <div class="branch">
-      <div class="chip" style="border-color:var(--vec)">📝 prose → chunks → 🧠 vectors<small>~500-tok, 12% overlap, heading-grouped; each chunk tagged with section + page + doc title <em>(built + tested ✓)</em></small></div>
-      <div class="chip" style="border-color:var(--now)">🔢 number tables → 📊 SQL<small>carry headers across pages, type the $/comma numbers, flag totals <em>(next)</em></small></div>
+      <div class="chip" style="border-color:var(--vec)">📝 prose → chunks → 🧠 vectors<small>~500-tok, 12% overlap, heading-grouped; each chunk tagged with section + page + doc title; page-1 footnotes kept as own chunks <em>(built + tested ✓)</em></small></div>
+      <div class="chip" style="border-color:var(--vec)">🔢 number tables → 📊 SQL<small>page-grids stitched into one table (rescues rows mistaken for headers) · "$1,234" typed · summary rows flagged by shape · word-tables stay vector-only <em>(built + proven ✓)</em></small></div>
     </div>
   </div>
   </div>
-  <p style="margin-top:.7rem;color:var(--muted);font-size:.88rem">✔️ <strong>Proven end-to-end</strong> on a public arXiv survey: ask a question → right chunk back with its <strong>section + page</strong>. 3 of 4 test questions dead-on; "who are the authors?" is a known weak spot for meaning-search alone (→ hybrid keyword + eval later).</p>
+  <p style="margin-top:.7rem;color:var(--muted);font-size:.88rem">✔️ <strong>Proof (Jul 6):</strong> a real 7-page order PDF → ONE 31-item table; every row's Cost × Quantity matched its Total Cost; <strong>SUM of the items = the document's own printed total (1191.86), to the cent</strong>. The 42-page survey's 5 word-tables correctly stayed OUT of the numbers database.</p>
+</div>
+
+<!-- ============ RETRIEVAL PIPELINE ============ -->
+<h2>🔎 How a PDF turns into a searchable answer</h2>
+
+<div class="card">
+  <p style="margin-bottom:.9rem">Every uploaded PDF walks through <strong>5 stages</strong>. Stages 1–4 happen
+  once, at upload. Stage 5 happens each time you ask a question.</p>
+  <div class="scroll">
+  <div class="flow" style="min-width:540px">
+    <div class="node">📄 PDF arrives</div>
+    <div class="arrow">▼</div>
+    <div class="node" style="border-color:var(--vec)">1 · EXTRACT <small>Docling reads the PDF into clean text + tables + page numbers · knows a heading from a paragraph</small></div>
+    <div class="arrow">▼</div>
+    <div class="node" style="border-color:var(--vec)">2 · CHUNK <small>cut the text into small passages · ~500 tokens each (≈350–400 words) · ~12% overlap · never crosses a heading</small></div>
+    <div class="arrow">▼</div>
+    <div class="node" style="border-color:var(--vec)">3 · LABEL (metadata) <small>stick a label card on every chunk: company · file · page · section · doc title</small></div>
+    <div class="arrow">▼</div>
+    <div class="node" style="border-color:var(--vec)">4 · INDEX TWO WAYS <small>each chunk gets a meaning-fingerprint <em>and</em> a keyword-index entry</small></div>
+    <div class="arrow">▼</div>
+    <div class="node" style="border-color:var(--accent)">5 · SEARCH (hybrid) <small>a question searches both ways, merges them, returns the top 5 passages</small></div>
+  </div>
+  </div>
+</div>
+
+<!-- Stage 2 detail: chunk size + overlap -->
+<div class="card">
+  <p style="margin-bottom:.7rem"><strong>Stage 2 up close — the numbers you asked about.</strong>
+  Each chunk is <strong>~500 tokens</strong> (a token ≈ ¾ of a word), and each one repeats
+  the <strong>last ~12% (~60 tokens)</strong> of the chunk before it.</p>
+  <div class="scroll">
+  <div class="flow" style="min-width:520px">
+    <div class="branch" style="align-items:stretch">
+      <div class="chip" style="border-color:var(--vec);max-width:200px">CHUNK 1<small>~500 tokens · ends with its last ~60 tokens →</small></div>
+      <div class="chip" style="border-color:var(--now);background:var(--now-bg);max-width:150px">the ~60-token<br>OVERLAP<small>repeated in both</small></div>
+      <div class="chip" style="border-color:var(--vec);max-width:200px">CHUNK 2<small>← starts with those same ~60 tokens · ~500 total</small></div>
+    </div>
+  </div>
+  </div>
+  <p style="margin-top:.7rem;color:var(--muted);font-size:.88rem">✔️ <strong>Why the overlap:</strong>
+  if an important sentence sits right on a cut line, the repeat makes sure it lands
+  <em>whole</em> inside at least one chunk instead of being sliced in half.</p>
+</div>
+
+<!-- Stage 3 detail: the metadata card -->
+<div class="card">
+  <p style="margin-bottom:.6rem"><strong>Stage 3 up close — the label card</strong> stuck on every chunk.
+  This is what lets ORCA answer <em>"…from page 33, section 10.3"</em> and keep one company's data separate.</p>
+  <div class="branch" style="justify-content:flex-start">
+    <div class="chip">🏢 company + file<small>tenant safety</small></div>
+    <div class="chip">📄 page<small>"from page 33"</small></div>
+    <div class="chip">📑 section<small>"§10.3 Corrective RAG"</small></div>
+    <div class="chip">📘 doc title<small>on every chunk</small></div>
+    <div class="chip">🔗 parent section<small>hierarchy-ready</small></div>
+  </div>
+  <p style="margin-top:.7rem;color:var(--muted);font-size:.88rem"><strong>Light enrichment (today):</strong>
+  we add a few helper words before fingerprinting — the authors chunk gets an <em>"Authors (who wrote this)…"</em>
+  cue, captions get a <em>"[Figure/Table caption]"</em> tag, footnotes a <em>"[Footnote, page 1]"</em> tag.
+  The heavy version (an AI summary on every chunk) needs Bedrock — parked.</p>
+</div>
+
+<!-- Stage 5 detail: hybrid search + RRF C -->
+<div class="card">
+  <p style="margin-bottom:.8rem"><strong>Stage 5 up close — hybrid search</strong> (the engine behind the scoreboard above).
+  Your question runs through <strong>both</strong> searches at once, then the two ranked lists get merged.</p>
+  <div class="scroll">
+  <div class="flow" style="min-width:540px">
+    <div class="node">❓ your question</div>
+    <div class="arrow">▼</div>
+    <div class="branch">
+      <div class="chip" style="border-color:var(--vec)">🧠 MEANING search<small>embeddings · finds "money back" when you asked "refund"</small></div>
+      <div class="chip" style="border-color:var(--accent)">🔡 KEYWORD search (BM25)<small>exact words · finds "SKU-4471", "Baccarat", a section title · zero-word-overlap "hits" filtered out (Jul 6)</small></div>
+    </div>
+    <div class="arrow">▼</div>
+    <div class="node" style="border-color:var(--now)">🔀 MERGE the two lists — RRF, <strong>C = 5</strong><small>C decides how much being "#1 in one list" counts · low C = trust a strong single hit more (this rescued the metadata questions)</small></div>
+    <div class="arrow">▼</div>
+    <div class="node" style="border-color:var(--accent)">🏆 top 5 passages → the answer material</div>
+  </div>
+  </div>
+  <p style="margin-top:.7rem;color:var(--muted);font-size:.88rem">✔️ <strong>Why both:</strong>
+  meaning-search and keyword-search each catch what the other misses — running both and merging beats either alone.
+  <strong>C = 5</strong> validated on a 2nd unseen document (110-pg economics module, ~100%) → now the default.
+  <strong>Jul-6 sharpening:</strong> zero-score keyword hits filtered + page-1 footnotes in their own small chunks
+  → <strong>87.5%</strong>.</p>
 </div>
 
 <!-- ============ ROADMAP ============ -->
-<h2>🗺️ The plan (each layer proven before the next sits on it)</h2>
+<h2>🗺️ The plan — each layer proven before the next sits on it</h2>
 
 <div class="card phase">
-  <div class="letter l-now">A</div>
+  <div class="letter l-done">A</div>
   <div class="body">
-    <h3>Give ORCA data — ingestion <span class="badge b-now">NOW</span></h3>
-    <p>The doorman + Excel processor above. One real Excel → SQL rows + vectors + stored file.
-    Test: totals in SQL = totals in the Excel.</p>
+    <h3>Give ORCA data — ingestion <span class="badge b-done">DONE</span></h3>
+    <p>The doorman + Excel processor + PDF processor above. Excel AND PDF → SQL rows +
+    vectors + stored file, each proven against the document's own totals. The brain's
+    three legs all exist now: meaning search · keyword search · exact-number SQL.
+    (Parked until Bedrock: Titan embedder swap, reranker.)</p>
   </div>
 </div>
 <div class="connector"></div>
 
 <div class="card phase">
-  <div class="letter l-later">B</div>
+  <div class="letter l-now">B</div>
   <div class="body">
-    <h3>Build the brain — orchestrator on LangGraph <span class="badge b-later">LATER</span></h3>
+    <h3>Build the brain — orchestrator on LangGraph <span class="badge b-now">NEXT</span></h3>
     <p>Node by node: a router reads the question and picks a path — answer directly /
     one simple lookup / decompose into sub-questions (2D model: parallel branches +
     dependent steps) — then combines results into one answer with citations.
@@ -281,19 +484,52 @@
 </div>
 
 <!-- ============ SESSION LOG ============ -->
-<h2>📓 Session log</h2>
-<div class="card">
-  <ul class="log">
-    <li><span class="when">Jul 5 — Session 6 (hybrid search):</span> Bedrock still blocked (quota 0 for every model even a day after the upgrade; a terminal test proved our code is fine, only AWS's quota is missing) → <b>opened a free AWS support case</b> to switch it on. Walid's rule: the embedder must be on AWS, no local model — so we improved retrieval a different way. Added <b>keyword search (BM25)</b> next to the meaning search and <b>merged</b> them ("hybrid"): the two catch what each other misses. Result: retrieval jumped <b>43% → 72.5%</b>. Then found the merge was burying the title/authors chunk and fixed it by tuning one setting ("C" = 5): <b>→ 82.5%</b>. Finally <b>validated on a brand-new document</b> (a 110-page economics textbook we downloaded) — ~100%, no overfitting — so C=5 is now the default. All with the embedder untouched, so it stacks with Titan later.</li>
-    <li><span class="when">Jul 5 — Session 5 (AWS Paid Plan):</span> <b>Upgraded the AWS account to the Paid Plan</b> — the thing that fences off Bedrock on the Free Plan. Checked first (official AWS docs + the upgrade page itself): <b>the $119 credits are safe</b> — they carry over and get spent first, and nothing is charged until they run out. Used the plain upgrade path (avoided the Organizations route, which would have expired the credits). Upgrade succeeded, no card needed. Titan's quota still read 0 right after — but so did every model, so it's just AWS taking a few minutes to switch access on. Also mapped the <b>embedder fallbacks</b> if Titan stays stuck: Cohere sits behind the same Bedrock gate (no help), so the real safety net = <b>BGE-M3</b> (free, multilingual, runs locally or inside ORCA's own container). Next: wait → test Titan in the terminal → embedder eval vs 43%.</li>
-    <li><span class="when">Jul 5 — Session 4 (eval + Bedrock):</span> Made the PDF chunker embed <b>captions + tables</b> as text too (diagrams &amp; grids now searchable, not just prose). Embedded the <b>full 42-page</b> survey (was an 8-page peek) → 169 chunks. Built the <b>retrieval eval</b>: 20 known-answer questions → <b>baseline 43%</b> (graded: did the right chunk come back?). Diagnosis: a few "magnet" chunks match everything, titled sections that ARE the answer got missed, all 5 metadata Qs failed → validates <b>hybrid BM25 + a better embedder</b>. Read the full survey, saved its insights. Started wiring <b>Bedrock Titan</b> (creds+admin+code all work — a throttle proved the call lands) but the account's <b>Free Plan fences off Bedrock</b> (quota 0); fix = upgrade to Paid Plan (credits cover it). Next: upgrade → test Titan → embedder eval vs 43%.</li>
-    <li><span class="when">Jul 4 — Session 3 (PDF):</span> Gave ORCA its own <b>virtualenv</b> (installs can't touch global Python). Built the <b>PDF prose path</b>: <b>Docling</b> layout-aware extractor → our own structure-aware <b>chunker</b> (~500-tok, 12% overlap, heading-grouped, metadata card = section + page + doc-title + parent-id) → vectors. Fixed authors-becoming-fake-sections; now records which page each chapter starts on. <b>Proven end-to-end</b> on a public arXiv survey — 3/4 questions dead-on with section + page citations. Lesson: meaning-search is weak on "who/when/title" metadata questions → hybrid keyword + better embedder, eval-graded. Next: retrieval eval, then PDF number-tables → SQL.</li>
-    <li><span class="when">Jul 4 — Session 2 (stores):</span> Built + tested all <b>three stores</b> (stages 6–7): 📊 SQL (typed table/sheet, tenant+citation+hash columns, exact SUM proven, no re-upload dupes) · 📁 file copy + manifest + content-hash skip · 🧠 vectors (Chroma + local all-MiniLM, 967 chunks, meaning-search returns right rows + citations). Decided update strategy = <b>upload-based + incremental (hash-diff)</b>; embedder = local now → <b>Bedrock Titan V2</b> final (eval Titan vs Cohere-multilingual on the real mixed-language data). Next: the agent brain (Phase B).</li>
-    <li><span class="when">Jul 3 — Session 2 (build):</span> Built + tested the <b>doorman</b> (type by content, not name) and <b>Excel stages 1–5</b> on the real file: open → block-detection (kept a "Fast Calculation" mini-table out of the numbers) → typed read → flag Total rows → tag columns. <b>Accuracy proven:</b> re-summing the data rows hit the sheet's own Total exactly (5,110.79).</li>
-    <li><span class="when">Jul 3 — Session 2 (design):</span> Reviewed old <code>file_processor.py</code>, checked 2026 industry practice, inspected the real <code>OB7ola.xlsx</code> (6 sheets), and agreed the new Excel-processor design: doorman routing → 7-stage pipeline → 3 stores.</li>
-    <li><span class="when">Jul 3 — Session 1:</span> Fresh git repo + Python skeleton + privacy fence; public repo live at github.com/Walids77/ORCA; sample Excel added.</li>
-  </ul>
-</div>
+<h2>📓 Session log — click a session to read it</h2>
+
+<details class="session" open>
+  <summary>Jul 6 · Session 8 <span class="when">retrieval 87.5% + PDF tables→SQL — ingestion phase DONE</span></summary>
+  <p>Walid asked Fable 5 to <b>review the retrieval logic against 2026 best practice</b> (web-checked): the hybrid design IS the industry standard; one real flaw found — keyword "hits" that share <b>zero words</b> with the question were still entering the merge and collecting points for just occupying a rank → filtered out (cost nothing, removed a noise risk). Then <b>Option A</b>: kept page-1 <b>footnotes</b> — first attempt stored the GitHub link but STILL failed the test (it drowned inside a big chunk; keyword search favors small chunks where the match matters) → gave each footnote its <b>own small chunk</b> → the GitHub question now returns the link at <b>rank 1</b>. Retrieval <b>82.5% → 87.5%</b>, no regressions. Then <b>Option B</b>: built the <b>PDF number-tables → SQL</b> stage — stitched 7 page-grids back into ONE 31-item table (rescuing rows the extractor had mistaken for headers = silent data loss), typed the "$1,234" cells into real numbers, flagged the 5-line summary ladder ("Initial / discount / Final to pay") by its SHAPE not its words. <b>Proof: SUM of the items = 1191.86 = the PDF's own printed total, to the cent</b>; and the survey's 5 word-tables correctly stayed OUT of the numbers database. Ingestion phase = done; next session: check the AWS case → Titan eval, or start the LangGraph brain.</p>
+</details>
+
+<details class="session">
+  <summary>Jul 6 · Session 7 <span class="when">review + plan — the "metadata route" was already solved</span></summary>
+  <p>No code — a <b>verify-first</b> session. Before building the planned "metadata route" (a shortcut that answers "who/title" questions from stored fields), we re-read the code and last session's scorecard and found it's <b>mostly already solved</b>: the C=5 tuning from Session 6 already made ORCA answer "who are the authors?" and "what is the title?" correctly. What's genuinely left and needs no AWS: (1) the paper's <b>GitHub link</b> — it sits in a <b>footnote</b> (small note at the bottom of the page) that we currently throw away, so ORCA can't find it; (2) "how many categories" — weak, wants a model. <b>Locked two choices for next session:</b> A = keep footnotes so the link is found + re-run the test; B = the <b>PDF number-tables → SQL</b> step. Also set two standing communication rules in CLAUDE.md (always explain a term in plain English; never use short codes like "B14").</p>
+</details>
+
+<details class="session">
+  <summary>Jul 5 · Session 6 <span class="when">hybrid search — 43% → 82.5%</span></summary>
+  <p>Bedrock still blocked (quota 0 for every model even a day after the upgrade; a terminal test proved our code is fine, only AWS's quota is missing) → <b>opened a free AWS support case</b> to switch it on. Walid's rule: the embedder must be on AWS, no local model — so we improved retrieval a different way. Added <b>keyword search (BM25)</b> next to the meaning search and <b>merged</b> them ("hybrid"): the two catch what each other misses. Result: retrieval jumped <b>43% → 72.5%</b>. Then found the merge was burying the title/authors chunk and fixed it by tuning one setting ("C" = 5): <b>→ 82.5%</b>. Finally <b>validated on a brand-new document</b> (a 110-page economics textbook we downloaded) — ~100%, no overfitting — so C=5 is now the default. All with the embedder untouched, so it stacks with Titan later.</p>
+</details>
+
+<details class="session">
+  <summary>Jul 5 · Session 5 <span class="when">AWS account upgraded to the Paid Plan</span></summary>
+  <p><b>Upgraded the AWS account to the Paid Plan</b> — the thing that fences off Bedrock on the Free Plan. Checked first (official AWS docs + the upgrade page itself): <b>the $119 credits are safe</b> — they carry over and get spent first, and nothing is charged until they run out. Used the plain upgrade path (avoided the Organizations route, which would have expired the credits). Upgrade succeeded, no card needed. Titan's quota still read 0 right after — but so did every model, so it's just AWS taking a few minutes to switch access on. Also mapped the <b>embedder fallbacks</b> if Titan stays stuck: Cohere sits behind the same Bedrock gate (no help), so the real safety net = <b>BGE-M3</b> (free, multilingual, runs locally or inside ORCA's own container). Next: wait → test Titan in the terminal → embedder eval vs 43%.</p>
+</details>
+
+<details class="session">
+  <summary>Jul 5 · Session 4 <span class="when">first eval number (43%) + Bedrock wired</span></summary>
+  <p>Made the PDF chunker embed <b>captions + tables</b> as text too (diagrams &amp; grids now searchable, not just prose). Embedded the <b>full 42-page</b> survey (was an 8-page peek) → 169 chunks. Built the <b>retrieval eval</b>: 20 known-answer questions → <b>baseline 43%</b> (graded: did the right chunk come back?). Diagnosis: a few "magnet" chunks match everything, titled sections that ARE the answer got missed, all 5 metadata Qs failed → validates <b>hybrid BM25 + a better embedder</b>. Read the full survey, saved its insights. Started wiring <b>Bedrock Titan</b> (creds+admin+code all work — a throttle proved the call lands) but the account's <b>Free Plan fences off Bedrock</b> (quota 0); fix = upgrade to Paid Plan (credits cover it). Next: upgrade → test Titan → embedder eval vs 43%.</p>
+</details>
+
+<details class="session">
+  <summary>Jul 4 · Session 3 <span class="when">PDF prose path built + proven</span></summary>
+  <p>Gave ORCA its own <b>virtualenv</b> (installs can't touch global Python). Built the <b>PDF prose path</b>: <b>Docling</b> layout-aware extractor → our own structure-aware <b>chunker</b> (~500-tok, 12% overlap, heading-grouped, metadata card = section + page + doc-title + parent-id) → vectors. Fixed authors-becoming-fake-sections; now records which page each chapter starts on. <b>Proven end-to-end</b> on a public arXiv survey — 3/4 questions dead-on with section + page citations. Lesson: meaning-search is weak on "who/when/title" metadata questions → hybrid keyword + better embedder, eval-graded. Next: retrieval eval, then PDF number-tables → SQL.</p>
+</details>
+
+<details class="session">
+  <summary>Jul 4 · Session 2 (stores) <span class="when">all three stores built + tested</span></summary>
+  <p>Built + tested all <b>three stores</b> (stages 6–7): 📊 SQL (typed table/sheet, tenant+citation+hash columns, exact SUM proven, no re-upload dupes) · 📁 file copy + manifest + content-hash skip · 🧠 vectors (Chroma + local all-MiniLM, 967 chunks, meaning-search returns right rows + citations). Decided update strategy = <b>upload-based + incremental (hash-diff)</b>; embedder = local now → <b>Bedrock Titan V2</b> final (eval Titan vs Cohere-multilingual on the real mixed-language data). Next: the agent brain (Phase B).</p>
+</details>
+
+<details class="session">
+  <summary>Jul 3 · Session 2 (build) <span class="when">doorman + Excel stages 1–5, accuracy proven</span></summary>
+  <p>Built + tested the <b>doorman</b> (type by content, not name) and <b>Excel stages 1–5</b> on the real file: open → block-detection (kept a "Fast Calculation" mini-table out of the numbers) → typed read → flag Total rows → tag columns. <b>Accuracy proven:</b> re-summing the data rows hit the sheet's own Total exactly (5,110.79). Earlier the same day (design): reviewed old <code>file_processor.py</code>, checked 2026 industry practice, inspected the real <code>OB7ola.xlsx</code> (6 sheets), and agreed the new Excel-processor design: doorman routing → 7-stage pipeline → 3 stores.</p>
+</details>
+
+<details class="session">
+  <summary>Jul 3 · Session 1 <span class="when">repo + skeleton + public GitHub launch</span></summary>
+  <p>Fresh git repo + Python skeleton + privacy fence; public repo live at github.com/Walids77/ORCA; sample Excel added.</p>
+</details>
 
 </body>
 </html>

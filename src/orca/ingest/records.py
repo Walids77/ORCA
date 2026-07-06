@@ -97,7 +97,10 @@ def build_chunks(extract, company_id: str, file_id: str) -> list[dict]:
 # NOTE: "caption" is deliberately NOT here anymore. A figure/table caption
 # ("Figure 3: the corrective RAG loop") is the cheap way to make a DIAGRAM
 # searchable — it describes a picture we can't otherwise embed. We keep it.
-_PDF_NOISE_LABELS = {"page_header", "page_footer", "footnote"}
+# NOTE: "footnote" is no longer dropped WHOLESALE either — PAGE-1 footnotes carry
+# real facts (an arXiv paper's GitHub link / contact info lives there). Footnotes
+# on later pages stay dropped: they are mostly citation noise. (Session 8, Option A.)
+_PDF_NOISE_LABELS = {"page_header", "page_footer"}
 
 # Target chunk size + overlap, measured in ESTIMATED tokens (~4 chars per token).
 _TARGET_TOKENS = 500
@@ -336,6 +339,7 @@ def build_pdf_chunks(extract, company_id: str, file_id: str) -> list[dict]:
     heading = ""                            # the heading currently open
     heading_page = 0                        # the page that heading appears on
     pieces: list[tuple[str, int]] = []      # content collected under `heading`
+    page1_footnotes: list[str] = []         # kept footnotes → standalone chunks
 
     def emit_frontmatter() -> None:
         nonlocal frontmatter
@@ -377,6 +381,14 @@ def build_pdf_chunks(extract, company_id: str, file_id: str) -> list[dict]:
     for block in extract.text_blocks:
         if block.label in _PDF_NOISE_LABELS:
             continue
+        # footnotes: keep PAGE 1 only (GitHub link, contact info); drop the rest.
+        # Kept ones are collected for their OWN standalone chunks below — folded
+        # into a ~500-token section chunk they drown (BM25 favors short chunks
+        # where the matched word is a big share of the text).
+        if block.label == "footnote":
+            if block.page == 1:
+                page1_footnotes.append(block.text)
+            continue
         if block.label == "section_header":
             close_current()                 # close the previous block cleanly
             heading = block.text
@@ -395,6 +407,25 @@ def build_pdf_chunks(extract, company_id: str, file_id: str) -> list[dict]:
 
     if in_frontmatter:                      # doc had no real heading at all
         emit_frontmatter()
+
+    # page-1 footnotes: each becomes its OWN small chunk (runs after the prose
+    # walk so `title` is known). Small on purpose: BM25 scores a match higher
+    # when it is a big share of the chunk, so "is there a GitHub repository?"
+    # can actually surface the one-line link. (Session 8, Option A.)
+    for note in page1_footnotes:
+        idx = len(chunks)
+        chunks.append({
+            "id": f"{company_id}:{file_id}:pdf:{idx}",
+            "text": f"[Footnote, page 1] {note}",
+            "metadata": {
+                "company_id": company_id, "file_id": file_id, "source": "pdf",
+                "section": "Footnote (page 1)", "section_page": 1,
+                "doc_title": title,
+                "parent_id": f"{company_id}:{file_id}:sec:footnotes-p1",
+                "page": 1, "pages": "1", "chunk_index": idx,
+                "is_footnote": True,
+            },
+        })
 
     # tables: embed each as text so word-tables (and the text of number-tables)
     # are searchable. This runs AFTER the prose walk so `title` is known for

@@ -2,6 +2,58 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-06 — Session 8: retrieval 87.5% (zero-score + footnote fixes) + PDF table→SQL
+- **Fable-5 code review of the retrieval logic vs 2026 best practice** (web-checked):
+  the hybrid BM25+vector+RRF design IS the industry-standard baseline; C=5 tuning
+  matches published guidance (low C = trust a #1 rank in one list). Next levers
+  confirmed = reranker (highest ROI, needs a model) + real embedder. One real flaw
+  found: BM25 returned its top-20 even when scores were 0.
+- **Zero-score fix** (`stores/hybrid.py`): chunks sharing NO word with the query no
+  longer enter the RRF fusion (they used to collect points just for occupying a rank —
+  risky with C=5). Verified: nonsense query → 0 keyword hits; score held at 82.5%.
+- **Footnote fix = Option A** (`ingest/records.py`): page-1 footnotes are no longer
+  dropped. **First attempt failed the eval** (link folded into the big ABSTRACT chunk →
+  drowned by BM25 length normalization) — the re-run scorecard caught it. Fix that
+  worked: each page-1 footnote becomes its OWN small chunk. **GitHub-link question now
+  hybrid rank 1.** Retrieval **82.5% → 87.5%** (17.5/20), no regressions.
+  Details: `eval/pdf_retrieval_footnote_2026-07-06.md`.
+- **PDF table→SQL = Option B** (`ingest/pdf_tables.py`, new stage): stitch page-grids
+  back into one table (re-printed / missing / data-mistaken-for-header cases — the last
+  RESCUES rows Docling was losing) → type cells ("$1,234.56"→1234.56, "(500)"→-500,
+  "12%"→12.0, dates) → flag summary rows by keyword AND by shape (label+value ladder:
+  "Initial", "Final to pay"…) → classify number-table (→SQL) vs word-table (vector-only).
+  Output = the Excel `SheetTable` shape, so `SqlStore` stores PDFs UNCHANGED. Added
+  `store_pdf_tables` + `purge_file` (stale tables on re-ingest with changed layout).
+- **Proven on the real purchase-order PDF:** 7 page-grids → ONE 36-row table (31 items +
+  5 flagged summary rows); row-math 29/29 Cost×Quantity=Total Cost; **SUM(items) =
+  1191.86 = the document's own printed "Initial" total, to the cent.** Survey PDF's 5
+  comparison tables all correctly classified word-table → vector-only.
+- **Limitations logged** (data-quality-advisor material, brief item 11): one row's cost
+  buried in its description text; one merged cell ("$9.55 4.00") — source messiness, not
+  chased.
+- **Next (Session 9):** check AWS support case `178327435100356` → if unblocked, Titan
+  embedder eval on top of 87.5%; if still blocked, start the **LangGraph agent brain**
+  (skeleton + retrieval nodes are model-free; LLM decision nodes need Bedrock — or
+  decide on a temporary key). All three legs the brain orchestrates now exist:
+  meaning search · keyword search · exact-number SQL.
+
+## 2026-07-06 — Session 7: reassessed the "metadata route" + communication rules (no code)
+- **Verification-first review.** Before building the planned "metadata route", re-read the
+  code + the Session-6 eval. **Finding: it's largely redundant** — the C=5 hybrid merge from
+  Session 6 already fixed the metadata questions ("who are the authors?", "what is the title?"
+  both now correct; they only failed at the old 43% vector-only baseline).
+- **What actually remains, still model-free (no Bedrock):** (1) the GitHub-link question — the
+  link is in a page-1 **footnote**, which is dropped at extraction (`records.py`,
+  `_PDF_NOISE_LABELS`), so it never enters the store; (2) "how many taxonomy categories" — weak,
+  wants a reranker (needs a model) or a count field.
+- **LOCKED for next session — pick one (both model-free):** Option A = keep page-1 footnotes so
+  the GitHub link is found, then re-run the eval; Option B = the PDF **table→SQL** step (number-
+  tables into the exact-numbers DB). Claude leans B (retrieval is good enough at 82.5%).
+- **Communication rules added to `CLAUDE.md`** (Walid's ask): keep the real term but always add a
+  one-line plain-English meaning; and **never use letter/number codes** ("B14", "A7") — spell out
+  the whole question/word every time.
+- No engine code changed. Details: `memory/metadata_route_reassessed.md`.
+
 ## 2026-07-05 — Session 6: hybrid BM25 retrieval + RRF C-tuning → 43% to 82.5% (embedder unchanged)
 - **Bedrock still blocked.** Re-checked a day after the Paid-Plan upgrade: on-demand quota
   still 0 for EVERY model (not just Titan). Ran a **ground-truth terminal test** (one Titan

@@ -113,6 +113,41 @@ class SqlStore:
             self.store_sheet(company_id, file_id, sheet)
         self._conn.commit()
 
+    def purge_file(self, company_id: str, file_id: str) -> None:
+        """Drop EVERYTHING previously stored for one file (all its tables).
+
+        Needed on re-ingest: the per-sheet replace in store_sheet only covers
+        sheets that still exist — if a re-uploaded file's table layout changed,
+        the old tables would linger as stale orphans. Table names embed the
+        file_id, so a file's tables belong to it alone and can be dropped whole.
+        """
+        rows = self.query(
+            "SELECT table_name FROM orca_catalog WHERE company_id = ? AND file_id = ?",
+            (company_id, file_id),
+        )
+        for row in rows:
+            self._conn.execute(f'DROP TABLE IF EXISTS "{row["table_name"]}"')
+        self._conn.execute(
+            "DELETE FROM orca_catalog WHERE company_id = ? AND file_id = ?",
+            (company_id, file_id),
+        )
+        self._conn.commit()
+
+    def store_pdf_tables(self, company_id: str, file_id: str,
+                         sheets: list[SheetTable]) -> None:
+        """Store tidied PDF number-tables — the exact same path as Excel sheets.
+
+        The PDF tidy stage (`pdf_tables.py`) outputs SheetTable objects, so the
+        sanitising / parameterised inserts / catalog below all apply unchanged.
+        Purges the file's previous tables first (its layout may have changed).
+        """
+        self.purge_file(company_id, file_id)
+        for sheet in sheets:
+            if sheet.n_rows == 0:
+                continue
+            self.store_sheet(company_id, file_id, sheet)
+        self._conn.commit()
+
     def store_sheet(self, company_id: str, file_id: str, sheet: SheetTable) -> None:
         """Create (if needed) the sheet's table and WHOLESALE-replace this
         file's rows in it. SQL writes are cheap, so replace is simplest + always
