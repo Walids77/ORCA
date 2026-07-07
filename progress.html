@@ -201,7 +201,7 @@
 <body>
 
 <h1>🐋 ORCA — Progress</h1>
-<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 6, 2026</strong></p>
+<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 7, 2026</strong></p>
 
 <!-- ============ HERO: WHERE ORCA STANDS ============ -->
 <div class="dash">
@@ -221,7 +221,7 @@
     <div class="eyebrow">Build phases</div>
     <ul class="steps">
       <li><span class="dot d-done">✓</span><span><b>A · Ingestion</b> — Excel + PDF → 3 stores, proven</span></li>
-      <li><span class="dot d-now">B</span><span><b>Brain</b> — orchestrator on LangGraph <span class="badge b-now">NEXT</span></span></li>
+      <li><span class="dot d-now">B</span><span><b>Brain</b> — orchestrator on LangGraph <span class="badge b-now">STARTED</span></span></li>
       <li class="later"><span class="dot d-later">C</span><span>Prove it — terminal + eval harness</span></li>
       <li class="later"><span class="dot d-later">D</span><span>Doorway — local web frontend</span></li>
       <li class="later"><span class="dot d-later">E</span><span>AWS — one service at a time</span></li>
@@ -263,6 +263,9 @@
     <li>Fable-5 review vs 2026 best practice: the retrieval design = the industry-standard baseline; found + fixed a <strong>fake-keyword-hit flaw</strong> (zero-score filter) <span class="when">— Jul 6</span></li>
     <li><strong>Footnote fix</strong>: page-1 footnotes kept as their own small chunks → the GitHub-link question now rank 1 → retrieval <strong>82.5% → 87.5%</strong>, no regressions <span class="when">— Jul 6</span></li>
     <li><strong>PDF number-tables → SQL built + proven</strong>: 7 page-grids stitched into ONE table, cells typed, summary rows flagged; <strong>SUM(items) = the PDF's own printed total, to the cent</strong> <span class="when">— Jul 6</span></li>
+    <li><strong>Brain phase opened: LangGraph installed</strong> + 2-node smoke test green (nodes run in order, pass data through the shared notebook) <span class="when">— Jul 7</span></li>
+    <li><strong>Temporary brain LLM locked: Gemini <code>gemini-2.5-flash</code></strong> (key in git-ignored <code>.env</code>, live-tested) behind a one-file adapter → swapping to Claude/Bedrock later = one file + an eval re-run <span class="when">— Jul 7</span></li>
+    <li><strong><code>langgraph_visual.html</code></strong> — visual explainer of LangGraph (nodes · arrows · notebook) + ORCA's target brain graph, color-coded built-vs-needs-LLM <span class="when">— Jul 7</span></li>
   </ul>
 </div>
 
@@ -438,11 +441,13 @@
 <div class="card phase">
   <div class="letter l-now">B</div>
   <div class="body">
-    <h3>Build the brain — orchestrator on LangGraph <span class="badge b-now">NEXT</span></h3>
+    <h3>Build the brain — orchestrator on LangGraph <span class="badge b-now">STARTED Jul 7</span></h3>
     <p>Node by node: a router reads the question and picks a path — answer directly /
     one simple lookup / decompose into sub-questions (2D model: parallel branches +
     dependent steps) — then combines results into one answer with citations.
-    Built in from day one: conversation memory + tracing.</p>
+    Built in from day one: conversation memory + tracing.
+    <strong>LLM = Gemini <code>gemini-2.5-flash</code> for now</strong> (behind a
+    one-file adapter) → Claude via Bedrock once AWS unblocks it.</p>
   </div>
 </div>
 <div class="connector"></div>
@@ -487,6 +492,11 @@
 <h2>📓 Session log — click a session to read it</h2>
 
 <details class="session" open>
+  <summary>Jul 7 · Session 9 <span class="when">brain phase opened — LangGraph in, Gemini as the temporary LLM</span></summary>
+  <p>The AWS support case is still pending (enabling Bedrock can take ~a week), so per the plan we moved to <b>Phase B — the brain</b>. <b>LangGraph installed</b> into ORCA's virtualenv and smoke-tested: a minimal 2-node graph ran end-to-end, proving nodes fire in order and pass their work through the shared <b>notebook</b> (the state). <b>Decision: Gemini <code>gemini-2.5-flash</code> is the temporary brain LLM</b> until Bedrock unblocks — it sits behind a <b>one-file adapter</b> (the only file that knows which model we talk to), so the later swap to Claude is one file + an eval re-run. Key stored in the git-ignored <code>.env</code> and live-tested (it answered the test prompt exactly). Built <b><code>langgraph_visual.html</code></b> — a drawn explainer of LangGraph (boxes = nodes, arrows = edges, the notebook, decision forks / parallel branches / capped loops) ending with ORCA's target brain graph, color-coded: green = the three retrieval legs already built, orange = the LLM decision nodes. Also removed the "👓 How to read this" rule from the global CLAUDE.md at Walid's request. <b>Skeleton on hold</b> — next session starts with a LangGraph discussion, then (on Walid's go) the brain skeleton.</p>
+</details>
+
+<details class="session">
   <summary>Jul 6 · Session 8 <span class="when">retrieval 87.5% + PDF tables→SQL — ingestion phase DONE</span></summary>
   <p>Walid asked Fable 5 to <b>review the retrieval logic against 2026 best practice</b> (web-checked): the hybrid design IS the industry standard; one real flaw found — keyword "hits" that share <b>zero words</b> with the question were still entering the merge and collecting points for just occupying a rank → filtered out (cost nothing, removed a noise risk). Then <b>Option A</b>: kept page-1 <b>footnotes</b> — first attempt stored the GitHub link but STILL failed the test (it drowned inside a big chunk; keyword search favors small chunks where the match matters) → gave each footnote its <b>own small chunk</b> → the GitHub question now returns the link at <b>rank 1</b>. Retrieval <b>82.5% → 87.5%</b>, no regressions. Then <b>Option B</b>: built the <b>PDF number-tables → SQL</b> stage — stitched 7 page-grids back into ONE 31-item table (rescuing rows the extractor had mistaken for headers = silent data loss), typed the "$1,234" cells into real numbers, flagged the 5-line summary ladder ("Initial / discount / Final to pay") by its SHAPE not its words. <b>Proof: SUM of the items = 1191.86 = the PDF's own printed total, to the cent</b>; and the survey's 5 word-tables correctly stayed OUT of the numbers database. Ingestion phase = done; next session: check the AWS case → Titan eval, or start the LangGraph brain.</p>
 </details>

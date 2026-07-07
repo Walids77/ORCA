@@ -9,8 +9,8 @@ and returns exact numbers, citations, and business explanations.
 > LangGraph), tested locally, then deployed to AWS piece by piece.
 
 ## Roadmap
-1. Local ingestion: a file → SQL rows + vectors + stored copy — **Excel done ✅ · PDF prose done ✅ · PDF number-tables next**
-2. Agent brain (orchestrator) on LangGraph
+1. Local ingestion: a file → SQL rows + vectors + stored copy — **done ✅ (Excel · PDF prose · PDF number-tables→SQL)**
+2. Agent brain (orchestrator) on LangGraph — **in progress 🚧** (temporary LLM: Gemini, swapping to Claude/Bedrock)
 3. Heavy testing / eval harness in the terminal (incl. retrieval accuracy)
 4. Local web frontend (login · upload · ask)
 5. AWS deployment (S3 · RDS + pgvector · Fargate · Cognito · Bedrock)
@@ -26,7 +26,9 @@ The **PDF** specialist uses [Docling](https://github.com/docling-project/docling
 (layout-aware) to extract text and tables. Prose is split into **structure-aware,
 heading-grouped chunks** (~500 tokens, ~12% overlap) — each chunk tagged with its
 section, page, and document title for citations — then embedded for semantic search.
-Number-tables (invoices, orders) route to SQL like Excel (next build step).
+Number-tables (invoices, orders) are stitched back together across pages, typed
+("$1,234.56" → 1234.56), and routed to SQL like Excel — proven against a real
+order PDF (the items re-summed to the document's own printed total, to the cent).
 
 ## Setup / run (local)
 ORCA runs in its own virtual environment so its packages never disturb your global

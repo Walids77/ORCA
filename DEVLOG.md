@@ -2,6 +2,26 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-07 — Session 9: brain phase opened — LangGraph installed + Gemini as temporary LLM
+- **AWS support case still pending** (Bedrock enable can take ~a week) → per the plan,
+  moved to **0a step 3: the LangGraph agent brain** instead of waiting.
+- **LangGraph 1.2.8 installed** into the project virtualenv (added to `requirements.txt`).
+  **Smoke test passed:** a minimal 2-node graph (greet → shout) ran end-to-end, proving
+  nodes execute in order and pass data through the shared state ("the notebook").
+- **Temporary brain LLM locked = Gemini `gemini-2.5-flash`** until Bedrock unblocks.
+  Design agreed: the LLM sits behind a one-file **adapter** — every brain node talks to
+  the adapter, never to Gemini directly, so the later swap to Claude/Bedrock is a
+  one-file change + an eval re-run. Key stored in `.env` (git-ignored, verified);
+  live-tested: model list OK, `gemini-2.5-flash` answered the test prompt exactly
+  (`gemini-3.5-flash` gave a 503 server-overload — Google's side, retry anytime).
+- **`langgraph_visual.html` created** — a visual one-pager for Walid: what LangGraph is
+  (a flowchart that runs: nodes/edges/notebook), the smoke test drawn, the three arrow
+  tricks (decision fork · parallel branches · capped loop-back), and ORCA's target brain
+  graph color-coded (green = the 3 built retrieval legs · orange = the LLM nodes).
+- No engine code changed. **Brain skeleton ON HOLD** — Walid wants to understand
+  LangGraph first; next session opens with a LangGraph discussion, then the skeleton
+  (`src/orca/brain/`: the real notebook/state + the three legs as nodes).
+
 ## 2026-07-06 — Session 8: retrieval 87.5% (zero-score + footnote fixes) + PDF table→SQL
 - **Fable-5 code review of the retrieval logic vs 2026 best practice** (web-checked):
   the hybrid BM25+vector+RRF design IS the industry-standard baseline; C=5 tuning

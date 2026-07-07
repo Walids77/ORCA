@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What is LangGraph? — ORCA's brain, drawn</title>
+<style>
+  :root{
+    --ink:#1f2937; --muted:#6b7280; --line:#d1d5db;
+    --box:#ffffff; --bg:#f3f4f6;
+    --built:#dcfce7; --built-b:#16a34a;
+    --todo:#f3f4f6; --todo-b:#9ca3af;
+    --llm:#fef3c7;  --llm-b:#d97706;
+    --note:#e0f2fe; --note-b:#0284c7;
+  }
+  body{font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--ink);
+       margin:0;padding:24px;line-height:1.45}
+  h1{font-size:1.5em;margin:0 0 4px}
+  h2{font-size:1.15em;margin:0 0 12px}
+  .sub{color:var(--muted);margin:0 0 24px}
+  .panel{background:var(--box);border:1px solid var(--line);border-radius:12px;
+         padding:20px 24px;margin-bottom:24px;max-width:900px}
+  /* boxes and arrows */
+  .flow{display:flex;flex-direction:column;align-items:center;gap:0}
+  .row{display:flex;gap:28px;justify-content:center;align-items:stretch;flex-wrap:wrap}
+  .node{border:2px solid var(--todo-b);background:var(--todo);border-radius:10px;
+        padding:10px 18px;text-align:center;min-width:130px;font-weight:600}
+  .node small{display:block;font-weight:400;color:var(--muted);font-size:.8em;margin-top:2px}
+  .built{background:var(--built);border-color:var(--built-b)}
+  .llm{background:var(--llm);border-color:var(--llm-b);border-style:dashed}
+  .pill{border-radius:999px;background:#111827;color:#fff;border:none;padding:6px 20px;
+        font-weight:700;min-width:0}
+  .arrow{color:var(--muted);font-size:1.3em;padding:2px 0;text-align:center}
+  .arrow.lbl{font-size:.85em;font-weight:600}
+  .notebook{border:2px solid var(--note-b);background:var(--note);border-radius:10px;
+            padding:8px 14px;font-family:Consolas,monospace;font-size:.85em;max-width:340px}
+  .notebook b{font-family:Segoe UI,Arial,sans-serif}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:.85em}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .chip{width:16px;height:16px;border-radius:4px;display:inline-block}
+  .why{background:#fafafa;border-left:4px solid var(--todo-b);padding:10px 14px;
+       margin-top:14px;font-size:.92em}
+  .cols{display:flex;gap:24px;flex-wrap:wrap}
+  .cols>div{flex:1;min-width:240px}
+  .plain{color:var(--muted);font-size:.9em}
+</style>
+</head>
+<body>
+
+<h1>🧠 What is LangGraph?</h1>
+<p class="sub">One page, drawn. Last updated: 2026-07-07 (Session 9)</p>
+
+<!-- ============ PANEL 1: THE ONE-LINE IDEA ============ -->
+<div class="panel">
+  <h2>1 · The one-line idea</h2>
+  <div class="cols">
+    <div>
+      <p><b>A normal Python script</b> runs top to bottom, one line after another —
+      like a to-do list you can't reorder:</p>
+      <div class="flow">
+        <div class="node">step 1</div><div class="arrow">▼</div>
+        <div class="node">step 2</div><div class="arrow">▼</div>
+        <div class="node">step 3</div>
+      </div>
+    </div>
+    <div>
+      <p><b>LangGraph</b> lets you write the program as a <b>flowchart that actually
+      runs</b>: boxes = jobs (<b>nodes</b>), arrows = what runs next (<b>edges</b>) —
+      and arrows may <b>branch</b>, <b>run side-by-side</b>, or <b>loop back</b>:</p>
+      <div class="flow">
+        <div class="node">decide</div>
+        <div class="arrow">▼ &nbsp; ▼</div>
+        <div class="row">
+          <div class="node">path A</div>
+          <div class="node">path B</div>
+        </div>
+        <div class="arrow">▼ &nbsp; ▼</div>
+        <div class="node">combine</div>
+      </div>
+    </div>
+  </div>
+  <div class="why">💡 <b>Why ORCA needs this:</b> your 2D-decomposition design IS a flowchart —
+  "decide simple-vs-hard, run sub-questions in parallel (breadth), some steps must wait for
+  earlier answers (depth), then combine." A straight top-to-bottom script can't express that;
+  a graph is exactly that.</div>
+</div>
+
+<!-- ============ PANEL 2: THE SMOKE TEST WE JUST RAN ============ -->
+<div class="panel">
+  <h2>2 · The smoke test you just ran — drawn</h2>
+  <p class="plain">Two nodes, one shared <b>notebook</b> (LangGraph calls it "state") passed
+  from box to box. Each box reads the notebook, does its one job, writes its result in.</p>
+  <div class="flow">
+    <div class="node pill">START</div>
+    <div class="arrow">▼</div>
+    <div class="notebook">notebook: { text: "" }</div>
+    <div class="arrow">▼</div>
+    <div class="node built">greet<small>writes a greeting</small></div>
+    <div class="arrow">▼</div>
+    <div class="notebook">notebook: { text: "hello from node 1" }</div>
+    <div class="arrow">▼</div>
+    <div class="node built">shout<small>uppercases it, adds a stamp</small></div>
+    <div class="arrow">▼</div>
+    <div class="notebook">notebook: { text: "HELLO FROM NODE 1 → passed through node 2" }</div>
+    <div class="arrow">▼</div>
+    <div class="node pill">END</div>
+  </div>
+  <div class="why">📓 <b>The notebook is the whole trick.</b> Nodes never talk to each other
+  directly — they only read/write the shared notebook. That's how the future "combine" node
+  will see everything the three retrieval legs found.</div>
+</div>
+
+<!-- ============ PANEL 3: THE THREE ARROW TRICKS ============ -->
+<div class="panel">
+  <h2>3 · The three arrow tricks (why LangGraph beats a plain script)</h2>
+  <div class="cols">
+    <div>
+      <p><b>① Decision arrow</b><br><span class="plain">(a "conditional edge" — an
+      if-check drawn as a fork)</span></p>
+      <div class="flow">
+        <div class="node llm">is it simple?</div>
+        <div class="arrow lbl">yes ▼ &nbsp;&nbsp;&nbsp; no ▼</div>
+        <div class="row">
+          <div class="node">quick path</div>
+          <div class="node">decompose</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <p><b>② Parallel arrows</b><br><span class="plain">(breadth — several nodes run
+      at the same time)</span></p>
+      <div class="flow">
+        <div class="node">split</div>
+        <div class="arrow">▼ &nbsp; ▼ &nbsp; ▼</div>
+        <div class="row">
+          <div class="node">leg 1</div>
+          <div class="node">leg 2</div>
+          <div class="node">leg 3</div>
+        </div>
+        <div class="arrow">▼ &nbsp; ▼ &nbsp; ▼</div>
+        <div class="node">combine</div>
+      </div>
+    </div>
+    <div>
+      <p><b>③ Loop-back arrow</b><br><span class="plain">(retry until good enough —
+      with a hard cap so it can't loop forever)</span></p>
+      <div class="flow">
+        <div class="node">retrieve</div>
+        <div class="arrow">▼</div>
+        <div class="node llm">enough?</div>
+        <div class="arrow lbl">no → back up ↺ (max 3×) &nbsp;·&nbsp; yes ▼</div>
+        <div class="node">answer</div>
+      </div>
+    </div>
+  </div>
+  <div class="why">🔁 Trick ③ is the "agentic RAG" loop from your brief — and trick ① is the
+  complexity router. Depth (a step that must WAIT for an earlier answer) is just a plain
+  arrow: whatever a node needs is already in the notebook when its turn comes.</div>
+</div>
+
+<!-- ============ PANEL 4: ORCA'S BRAIN, THE TARGET ============ -->
+<div class="panel">
+  <h2>4 · ORCA's brain — the graph we're about to build</h2>
+  <div class="flow">
+    <div class="node pill">USER QUESTION</div>
+    <div class="arrow">▼</div>
+    <div class="node llm">ROUTER<small>Gemini decides: simple or decompose?<br>which legs are needed?</small></div>
+    <div class="arrow">▼ &nbsp; ▼ &nbsp; ▼</div>
+    <div class="row">
+      <div class="node built">MEANING leg<small>vector search — BUILT ✔</small></div>
+      <div class="node built">KEYWORD leg<small>BM25 hybrid — BUILT ✔</small></div>
+      <div class="node built">SQL leg<small>exact numbers — BUILT ✔</small></div>
+    </div>
+    <div class="arrow">▼ &nbsp; ▼ &nbsp; ▼</div>
+    <div class="notebook">notebook: { question, plan, chunks found, SQL rows, … }</div>
+    <div class="arrow">▼</div>
+    <div class="node llm">COMBINE + ANSWER<small>Gemini writes the answer, with citations</small></div>
+    <div class="arrow">▼</div>
+    <div class="node pill">ANSWER</div>
+  </div>
+  <div class="legend">
+    <span><span class="chip" style="background:var(--built);border:2px solid var(--built-b)"></span> already built (model-free)</span>
+    <span><span class="chip" style="background:var(--llm);border:2px dashed var(--llm-b)"></span> needs the LLM (Gemini now → Claude/Bedrock later)</span>
+    <span><span class="chip" style="background:var(--note);border:2px solid var(--note-b)"></span> the shared notebook (state)</span>
+  </div>
+  <div class="why">🎯 <b>Build order (simple first, per your own standard):</b> V1 of the brain =
+  this picture with NO loop and a dumb router. Prove it with the eval. Only then earn each
+  upgrade (smarter router → decomposition → the capped loop) if the eval says it grades better.</div>
+</div>
+
+</body>
+</html>
