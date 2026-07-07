@@ -201,7 +201,7 @@
 <body>
 
 <h1>🐋 ORCA — Progress</h1>
-<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 7, 2026</strong></p>
+<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 8, 2026</strong></p>
 
 <!-- ============ HERO: WHERE ORCA STANDS ============ -->
 <div class="dash">
@@ -266,6 +266,8 @@
     <li><strong>Brain phase opened: LangGraph installed</strong> + 2-node smoke test green (nodes run in order, pass data through the shared notebook) <span class="when">— Jul 7</span></li>
     <li><strong>Temporary brain LLM locked: Gemini <code>gemini-2.5-flash</code></strong> (key in git-ignored <code>.env</code>, live-tested) behind a one-file adapter → swapping to Claude/Bedrock later = one file + an eval re-run <span class="when">— Jul 7</span></li>
     <li><strong><code>langgraph_visual.html</code></strong> — visual explainer of LangGraph (nodes · arrows · notebook) + ORCA's target brain graph, color-coded built-vs-needs-LLM <span class="when">— Jul 7</span></li>
+    <li><strong>LangGraph concepts locked</strong> — Walid owns the map model (stations · roads · junctions · notebook) and the 5 branch patterns; router rules brainstormed (domain-first via a data catalog → plan = parts × layers) <span class="when">— Jul 8</span></li>
+    <li>Smoke test saved as a real file: <code>scripts/langgraph_smoke.py</code> (the naive-RAG map, fake jobs, runs green) <span class="when">— Jul 8</span></li>
   </ul>
 </div>
 
@@ -492,6 +494,11 @@
 <h2>📓 Session log — click a session to read it</h2>
 
 <details class="session" open>
+  <summary>Jul 8 · Session 10 <span class="when">LangGraph concepts locked — Walid designed the branches himself</span></summary>
+  <p>Concept-only session, at Walid's request: understand LangGraph fully BEFORE building. He now owns the whole mental model — <b>nodes = work stations, edges = roads, conditional edges = junctions with a decision rule, and the notebook</b> (shared state) that rides the trip while every station reads it and writes its entry. Working through his own examples he <b>reinvented three of the five standard branch patterns</b> (the chain, the router, parallel fan-out/fan-in) before learning their names, then learned the other two: <b>orchestrator–workers</b> (a decomposer writes a PLAN into the notebook and one worker road runs N times in parallel — how ORCA's decompose branch will be built) and the <b>capped evaluator loop</b>. Settled his key design question: <b>the map stays fixed, the PLAN is dynamic</b> — a self-redrawing graph can't be caged or evaluated. He also brainstormed the <b>router's rules</b>: identify the domain first — concretely, show the router a <b>catalog of the tenant's actual data</b> (enables "not in your data" honesty + picking where to look) — then write a structured plan (parts × layers = his 2D model), each rule becoming an eval column. The smoke test was recreated <b>as a saved file</b> this time (<code>scripts/langgraph_smoke.py</code> — his naive-RAG map with fake jobs; green). <b>Standing rule set: Walid never reads code — we work on logic only.</b> Next session: <b>draw the brain's map together</b> (boxes and arrows), then build the skeleton on his go.</p>
+</details>
+
+<details class="session">
   <summary>Jul 7 · Session 9 <span class="when">brain phase opened — LangGraph in, Gemini as the temporary LLM</span></summary>
   <p>The AWS support case is still pending (enabling Bedrock can take ~a week), so per the plan we moved to <b>Phase B — the brain</b>. <b>LangGraph installed</b> into ORCA's virtualenv and smoke-tested: a minimal 2-node graph ran end-to-end, proving nodes fire in order and pass their work through the shared <b>notebook</b> (the state). <b>Decision: Gemini <code>gemini-2.5-flash</code> is the temporary brain LLM</b> until Bedrock unblocks — it sits behind a <b>one-file adapter</b> (the only file that knows which model we talk to), so the later swap to Claude is one file + an eval re-run. Key stored in the git-ignored <code>.env</code> and live-tested (it answered the test prompt exactly). Built <b><code>langgraph_visual.html</code></b> — a drawn explainer of LangGraph (boxes = nodes, arrows = edges, the notebook, decision forks / parallel branches / capped loops) ending with ORCA's target brain graph, color-coded: green = the three retrieval legs already built, orange = the LLM decision nodes. Also removed the "👓 How to read this" rule from the global CLAUDE.md at Walid's request. <b>Skeleton on hold</b> — next session starts with a LangGraph discussion, then (on Walid's go) the brain skeleton.</p>
 </details>
