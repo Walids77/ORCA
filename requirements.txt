@@ -6,3 +6,5 @@ docling         # PDF extractor: structure-preserving text + tables + OCR/images
 boto3           # AWS SDK — Bedrock embeddings (Titan V2) + S3/RDS later
 rank_bm25       # keyword (BM25) search — the exact-word half of hybrid retrieval
 langgraph       # the agent-brain framework: the flowchart (nodes/edges/state) the brain runs on
+google-genai    # the temporary brain LLM (Gemini) — behind a one-file adapter, swaps to Bedrock later
+python-dotenv   # loads the API key from the git-ignored .env (never hard-coded)

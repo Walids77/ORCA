@@ -201,7 +201,7 @@
 <body>
 
 <h1>🐋 ORCA — Progress</h1>
-<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 8, 2026</strong></p>
+<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 9, 2026</strong></p>
 
 <!-- ============ HERO: WHERE ORCA STANDS ============ -->
 <div class="dash">
@@ -269,6 +269,8 @@
     <li><strong>LangGraph concepts locked</strong> — Walid owns the map model (stations · roads · junctions · notebook) and the 5 branch patterns; router rules brainstormed (domain-first via a data catalog → plan = parts × layers) <span class="when">— Jul 8</span></li>
     <li>Smoke test saved as a real file: <code>scripts/langgraph_smoke.py</code> (the naive-RAG map, fake jobs, runs green) <span class="when">— Jul 8</span></li>
     <li><strong>Full brain map drawn</strong> — <code>langGraph.html</code>: the whole target design in boxes &amp; arrows (guard → memory → router → decompose → combine → self-check) <span class="when">— Jul 8</span></li>
+    <li><strong>Brain SKELETON built + running</strong> — the straight spine <code>src/orca/brain/</code>: question → text leg → numbers leg → real Gemini answer, wired to the real engines, with an anti-hallucination guardrail (refuses when the evidence isn't there) <span class="when">— Jul 9</span></li>
+    <li><strong>First ANSWER-level eval ~65–75%</strong> — all 20 known-answer questions run end-to-end through the brain (before, we only scored retrieval); traps refused, authors/title/GitHub now pass; failures sorted into 2 fix-piles <span class="when">— Jul 9</span></li>
     <li><strong>"Autonomous analyst" upgrade designed</strong> — ORCA answers <em>analysis</em> questions ("which department is overstaffed?"), not just retrieval: a caged <strong>calculate-worker</strong> (calls tested functions, never AI-written code), a <strong>benchmark</strong> step ("compared to what?"), and a <strong>3-layer answer</strong> (numbers · grounded diagnosis · fenced suggestion) <span class="when">— Jul 8</span></li>
   </ul>
 </div>
@@ -445,7 +447,7 @@
 <div class="card phase">
   <div class="letter l-now">B</div>
   <div class="body">
-    <h3>Build the brain — orchestrator on LangGraph <span class="badge b-now">DESIGNED Jul 8</span></h3>
+    <h3>Build the brain — orchestrator on LangGraph <span class="badge b-now">SKELETON Jul 9</span></h3>
     <p>Node by node: a router reads the question and picks a path — answer directly /
     one simple lookup / decompose into sub-questions (2D model: parallel branches +
     dependent steps) — then combines results into one answer with citations.
@@ -500,6 +502,10 @@
 <h2>📓 Session log — click a session to read it</h2>
 
 <details class="session" open>
+  <summary>Jul 9 · Session 12 <span class="when">brain skeleton built + first answer-level eval</span></summary>
+  <p>We built the <b>straight-line brain</b> — the simplest possible version, no branches or loops yet: <b>question → text leg → numbers leg → combine → answer</b>. It's wired to the <b>real engines</b> (the meaning + keyword search we built, and the numbers/SQL store), not fakes. We did it in two small steps, simplest first: (1) proved the whole road with a plain <i>non-AI</i> "combine" that just lists what each leg found (free, repeatable), then (2) swapped in the <b>real Gemini thinking node</b> behind a <b>one-file adapter</b> — the only place that knows which model we use, so switching to Claude/Bedrock later is a one-file change. From day one it has an <b>anti-hallucination guardrail</b>: it answers ONLY from the retrieved passages, cites them, and says "I can't answer that from the uploaded documents" when the evidence isn't there. Then the milestone: our <b>first ANSWER-level eval</b> — all 20 known-answer questions run end-to-end through the brain (every eval before this only scored whether the right chunk was <i>retrieved</i>; this scores the final <b>answer</b>). Result ≈ <b>13–15 / 20 (~65–75%)</b>, first-pass. Wins: all 3 trap questions (things the paper doesn't cover) were correctly refused — no making things up; and authors / title / GitHub, which ALL failed at the old 43% baseline, now pass. The failures sorted cleanly into two piles that each point to a different fix: <b>(1) refused but answerable</b> — the right chunk didn't reach the top 5 (fix: retrieve more / a reranker / the corrective loop); <b>(2) confidently wrong</b> — it trusted a plausible-looking wrong chunk (fix: sharper retrieval + an answer self-check). Next session: review the 20 answers together, confirm the grades, then test the cheapest fix first (retrieve more, one pass) and see if it beats this baseline before adding anything fancier.</p>
+  </details>
+  <details class="session">
   <summary>Jul 8 · Session 11 <span class="when">brain map drawn + the "autonomous analyst" upgrade</span></summary>
   <p>Design session, logic only — we <b>drew ORCA's full brain map</b> (saved as <code>langGraph.html</code>): guard → load memory → <b>router</b> (reads a catalog of the tenant's data + its agreed definitions) → three paths (answer directly / one lookup / <b>decompose</b>) → shared retrieval core → <b>combine</b> → self-check → answer, with the human able to challenge and the conversation continuing on memory. The big idea Walid drove: ORCA must answer <b>analysis questions</b>, not just retrieval questions. "What's the leave policy?" is a lookup; <b>"which department is overstaffed?"</b> is a conclusion that exists nowhere — it must be <b>computed and judged</b>. Three upgrades to the map followed: (1) the router's <b>data catalog</b> also holds the agreed <b>benchmarks</b> (what "overstaffed" means for this company); (2) the decompose branch gains a second worker type — <b>CALCULATE</b> — that is <b>caged</b> (it calls pre-built, tested functions like a calculator with fixed buttons, it never lets the AI write code, keeping the security rule and making every number checkable); (3) the answer comes back in <b>three labelled layers</b> — the exact numbers, the grounded diagnosis (the AI connecting those numbers, still traceable to data), and a clearly-fenced "general insight" (the AI's own experience, labelled "suggestion, not from your data", never allowed to override the numbers). We also mapped the four business-question levels (descriptive / diagnostic / predictive / prescriptive) onto the map — the first two are built, the last two are future branches — which answered Walid's question "can we add branches later?": a new question <b>shape</b> is free (the router just re-plans over the same roads); only a new <b>capability</b> (a forecast, web search) needs a new station. Bigger realization: ORCA is a <b>repeatable, tailorable service</b> — each company has its own data + definitions, so building it well (sample files → 100+ test questions → eval → fix → tailor) IS the AI Solutions/Implementation Engineer job, where Walid's client-facing background is the edge. Build order unchanged: the simple spine first, the analyst branch last, each step eval-gated.</p>
 </details>

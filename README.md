@@ -10,8 +10,11 @@ and returns exact numbers, citations, and business explanations.
 
 ## Roadmap
 1. Local ingestion: a file → SQL rows + vectors + stored copy — **done ✅ (Excel · PDF prose · PDF number-tables→SQL)**
-2. Agent brain (orchestrator) on LangGraph — **in progress 🚧** (temporary LLM: Gemini, swapping to Claude/Bedrock)
-3. Heavy testing / eval harness in the terminal (incl. retrieval accuracy)
+2. Agent brain (orchestrator) on LangGraph — **in progress 🚧** — straight-line skeleton done
+   (question → hybrid text retrieval → SQL numbers → grounded answer); branches next.
+   Temporary LLM: Gemini, swapping to Claude/Bedrock.
+3. Heavy testing / eval harness in the terminal — retrieval **87.5%**; first **answer-level**
+   eval **≈65–75%** (20 known-answer Qs, end-to-end through the brain)
 4. Local web frontend (login · upload · ask)
 5. AWS deployment (S3 · RDS + pgvector · Fargate · Cognito · Bedrock)
 

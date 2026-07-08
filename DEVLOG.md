@@ -2,6 +2,30 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-09 — Session 12: brain SKELETON built + first answer-level eval
+- **Built the straight-line brain** `src/orca/brain/` (the middle spine, no branches/loops yet):
+  `question → text leg → numbers leg → combine → answer`. The notebook (shared state), the three
+  stations, and the map are separate small files (`state.py` · `nodes.py` · `graph.py`).
+- **Wired to the REAL engines** (not fakes): text leg = `HybridSearcher` (meaning + keyword),
+  numbers leg = `SqlStore`. Proven end-to-end in the terminal on real embedded data
+  (`scripts/run_brain.py`).
+- **Two-step build (simplest first):** (1) proved the road with a plain non-AI "combine" that
+  just lists what each leg found — deterministic, free; (2) swapped in the real **Gemini** thinking
+  node behind a **one-file adapter** (`llm.py` — the only place that names the model; Bedrock/Claude
+  swap later = this one file). Installed `google-genai`; key stays in the git-ignored `.env`.
+- **Anti-hallucination from day one:** the combine node answers ONLY from the retrieved passages,
+  cites them, and refuses ("I can't answer that from the uploaded documents.") when the evidence
+  isn't there.
+- **First ANSWER-level eval** (`scripts/run_brain_eval.py`, results in
+  `eval/brain_answer_baseline_2026-07-09.md`): all 20 known-answer Qs run through the brain →
+  **≈13–15/20 (~65–75%)** first-pass. All 3 not-in-doc traps correctly refused; authors/title/GitHub
+  (all failed at the old 43% baseline) now pass. Failures sorted into two piles: **refused-but-
+  answerable** (chunk missed → raise k / reranker / loop) and **confidently-wrong** (trusted a
+  plausible wrong chunk → retrieval precision + an answer self-check).
+- **Next session:** review the 20 answers WITH Walid, confirm the grades, then test the cheapest
+  Pile-1 fix first (raise k, one pass), re-run this exact eval, and only earn a reranker/loop if the
+  eval proves one pass can't do it.
+
 ## 2026-07-08 — Session 11: brain map drawn + the "autonomous analyst" upgrade (design, no code)
 - **Drew ORCA's full brain map** — saved as **`langGraph.html`** (companion to Session 9's
   `langgraph_visual.html`): guard → load memory → **router** (reads a catalog of the tenant's
