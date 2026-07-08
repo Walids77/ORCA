@@ -2,6 +2,44 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-08 — Session 11: brain map drawn + the "autonomous analyst" upgrade (design, no code)
+- **Drew ORCA's full brain map** — saved as **`langGraph.html`** (companion to Session 9's
+  `langgraph_visual.html`): guard → load memory → **router** (reads a catalog of the tenant's
+  data + its agreed definitions) → three paths (answer directly / one lookup / **decompose**) →
+  shared retrieval core → **combine** → self-check → answer; human can challenge, conversation
+  continues on the cached memory.
+- **The core shift Walid drove:** ORCA must answer **analysis questions**, not just retrieval.
+  "What's the leave policy?" = a lookup; **"which department is overstaffed?"** = a conclusion
+  that exists in no document — it must be **computed and judged** ("the autonomous analyst").
+- **Three design upgrades to the map:** (1) the router's **data catalog** also holds the tenant's
+  agreed **benchmarks** (what "overstaffed" means for this company); (2) the decompose branch gains
+  a 2nd worker type — **CALCULATE** — that is **caged**: it calls pre-built, tested functions
+  (ratio/variance/trend), never AI-written code/SQL (keeps the security rule + makes each number
+  eval-checkable); which functions to build is revealed by the 100+ test questions, then hard-coded.
+  (3) COMBINE returns a **3-layer labelled answer** — the exact numbers · a grounded diagnosis (AI
+  connecting those numbers, still traceable) · a fenced "general insight" (AI's own experience,
+  labelled "suggestion, not from your data", never overrides the numbers). Decision support, not
+  decision-making.
+- **Mapped the 4 BI question levels** (descriptive/diagnostic = built · predictive/prescriptive =
+  future branches) → answered "can we add branches later?": a new question *shape* is free (router
+  re-plans over the same roads); only a new *capability* (forecast, web search) needs a new station.
+- **Bigger realization:** ORCA is a repeatable, tailorable per-company service — sample files →
+  100+ questions → eval → fix → tailor — which IS the AI Solutions/Implementation Engineer job.
+- No engine code changed. **Next (Session 12): build the brain skeleton** `src/orca/brain/` = the
+  middle spine (question → three retrieval legs → combine) on Walid's go, prove it in the terminal,
+  then earn each upgrade by eval. Keep checking AWS case `178327435100356`.
+
+## 2026-07-08 — Session 10: LangGraph concepts locked (discussion-only, no code)
+- Concept-only session at Walid's request — understand LangGraph before building. He now owns the
+  **map model** (nodes = stations · edges = roads · conditional edges = junctions · the notebook =
+  shared state) and the **5 standard branch patterns** (reinvented 3 himself; learned
+  orchestrator–workers = ORCA's decompose branch, and the capped evaluator loop).
+- Settled the key design question: **fixed map, dynamic plan** — the LLM writes a plan the fixed
+  graph executes; it never redraws roads at runtime (un-evaluable). Router rules brainstormed:
+  domain-first via a **data catalog** → structured plan (breadth × depth) → each rule an eval column.
+- Smoke test recreated **as a saved file** (`scripts/langgraph_smoke.py`, green). Standing rule set:
+  Walid works on logic only, never reads code.
+
 ## 2026-07-07 — Session 9: brain phase opened — LangGraph installed + Gemini as temporary LLM
 - **AWS support case still pending** (Bedrock enable can take ~a week) → per the plan,
   moved to **0a step 3: the LangGraph agent brain** instead of waiting.

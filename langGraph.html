@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORCA Brain Map — the Autonomous Analyst design</title>
+<style>
+  :root{
+    --ink:#1f2937; --muted:#6b7280; --line:#d1d5db;
+    --box:#ffffff; --bg:#f3f4f6;
+    --built:#dcfce7; --built-b:#16a34a;   /* already built */
+    --todo:#f3f4f6; --todo-b:#9ca3af;     /* to build */
+    --llm:#fef3c7;  --llm-b:#d97706;      /* needs the LLM */
+    --note:#e0f2fe; --note-b:#0284c7;     /* notebook / state */
+    --calc:#ede9fe; --calc-b:#7c3aed;     /* NEW: calculate worker */
+    --l1:#dcfce7;  --l1-b:#16a34a;        /* answer layer 1: numbers */
+    --l2:#fef3c7;  --l2-b:#d97706;        /* answer layer 2: diagnosis */
+    --l3:#e0f2fe;  --l3-b:#0284c7;        /* answer layer 3: insight */
+    --warn:#fee2e2; --warn-b:#dc2626;     /* guardrails */
+  }
+  body{font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--ink);
+       margin:0;padding:24px;line-height:1.45}
+  h1{font-size:1.6em;margin:0 0 4px}
+  h2{font-size:1.15em;margin:0 0 12px}
+  .sub{color:var(--muted);margin:0 0 24px}
+  .panel{background:var(--box);border:1px solid var(--line);border-radius:12px;
+         padding:20px 24px;margin-bottom:24px;max-width:960px}
+  .flow{display:flex;flex-direction:column;align-items:center;gap:0}
+  .row{display:flex;gap:22px;justify-content:center;align-items:stretch;flex-wrap:wrap}
+  .node{border:2px solid var(--todo-b);background:var(--todo);border-radius:10px;
+        padding:10px 18px;text-align:center;min-width:130px;font-weight:600}
+  .node small{display:block;font-weight:400;color:var(--muted);font-size:.8em;margin-top:2px}
+  .built{background:var(--built);border-color:var(--built-b)}
+  .llm{background:var(--llm);border-color:var(--llm-b);border-style:dashed}
+  .calc{background:var(--calc);border-color:var(--calc-b)}
+  .pill{border-radius:999px;background:#111827;color:#fff;border:none;padding:6px 20px;
+        font-weight:700;min-width:0}
+  .tag{display:inline-block;font-size:.62em;font-weight:700;padding:1px 7px;border-radius:999px;
+       vertical-align:middle;margin-left:6px}
+  .tag.new{background:var(--calc);color:var(--calc-b);border:1px solid var(--calc-b)}
+  .tag.ok{background:var(--built);color:var(--built-b);border:1px solid var(--built-b)}
+  .arrow{color:var(--muted);font-size:1.3em;padding:2px 0;text-align:center}
+  .arrow.lbl{font-size:.85em;font-weight:600}
+  .notebook{border:2px solid var(--note-b);background:var(--note);border-radius:10px;
+            padding:8px 14px;font-family:Consolas,monospace;font-size:.82em;max-width:420px}
+  .notebook b{font-family:Segoe UI,Arial,sans-serif}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:.85em}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .chip{width:16px;height:16px;border-radius:4px;display:inline-block}
+  .why{background:#fafafa;border-left:4px solid var(--todo-b);padding:10px 14px;
+       margin-top:14px;font-size:.92em}
+  .why.warn{border-left-color:var(--warn-b);background:#fff5f5}
+  .cols{display:flex;gap:24px;flex-wrap:wrap}
+  .cols>div{flex:1;min-width:240px}
+  .plain{color:var(--muted);font-size:.9em}
+  table{border-collapse:collapse;width:100%;font-size:.9em;margin-top:6px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#f9fafb}
+  .decompose{border:2px solid var(--calc-b);border-radius:12px;padding:14px 16px;
+             background:#faf9ff;max-width:640px}
+  .layer{border-radius:10px;padding:10px 14px;margin:8px 0;border:2px solid}
+  .layer.l1{background:var(--l1);border-color:var(--l1-b)}
+  .layer.l2{background:var(--l2);border-color:var(--l2-b)}
+  .layer.l3{background:var(--l3);border-color:var(--l3-b);border-style:dashed}
+  .layer b{display:block;margin-bottom:2px}
+  .steps{counter-reset:s;list-style:none;padding-left:0;max-width:820px}
+  .steps li{position:relative;padding:8px 8px 8px 44px;margin-bottom:6px;
+            border:1px solid var(--line);border-radius:8px;background:#fafafa}
+  .steps li::before{counter-increment:s;content:counter(s);position:absolute;left:10px;top:8px;
+            width:24px;height:24px;background:#111827;color:#fff;border-radius:50%;
+            text-align:center;line-height:24px;font-weight:700;font-size:.85em}
+</style>
+</head>
+<body>
+
+<h1>🧭 ORCA's Brain — the Autonomous-Analyst design</h1>
+<p class="sub">The full target map, drawn. Logic only. Last updated: 2026-07-08 (Session 11).
+Companion to <b>langgraph_visual.html</b> (which explains what LangGraph <i>is</i>); this page
+is the <b>design ORCA is being built toward</b>.</p>
+
+<!-- ============ PANEL 1: THE BIG SHIFT ============ -->
+<div class="panel">
+  <h2>1 · The shift — from "find" to "figure out"</h2>
+  <div class="cols">
+    <div>
+      <p><b>Retrieval question</b> — the answer already exists in a document.</p>
+      <p class="plain">"What is our leave policy?" → find the paragraph, return it. Plain RAG.</p>
+    </div>
+    <div>
+      <p><b>Analysis question</b> — the answer exists <i>nowhere</i>; it must be
+      <b>computed and judged</b>.</p>
+      <p class="plain">"Which department is overstaffed?" → pull the numbers, compute a ratio,
+      compare to a benchmark, phrase a recommendation. The <b>autonomous analyst</b>.</p>
+    </div>
+  </div>
+  <div class="why">💡 <b>Why this matters:</b> "chat with your documents" is crowded and
+  unimpressive. "An agent that reads a company's data and produces a staffing / financial
+  analysis <i>with its reasoning shown</i>" is differentiated — and it demonstrates the exact
+  skills (tool use, multi-step reasoning, structured + unstructured data) the AI-engineer roles
+  ask for. Validated demand: finance advisory + HR advisory are two of the most common agentic-RAG
+  use cases right now.</div>
+</div>
+
+<!-- ============ PANEL 2: THE FOUR QUESTION LEVELS ============ -->
+<div class="panel">
+  <h2>2 · The four question levels → which path on the map</h2>
+  <p class="plain">The standard Business-Intelligence ladder. It tells us which questions the map
+  answers <b>today</b> (levels 1–2) and which earn a <b>new branch later</b> (levels 3–4).</p>
+  <table>
+    <tr><th>Level</th><th>Answers…</th><th>Example</th><th>Path on the map</th><th>Status</th></tr>
+    <tr><td><b>Descriptive</b></td><td>what happened</td>
+        <td>"Which department exceeded its budget?"</td>
+        <td>single-shot SQL (compare a column, sort/filter)</td>
+        <td><span class="tag ok">built ✓</span></td></tr>
+    <tr><td><b>Diagnostic</b></td><td>why it happened</td>
+        <td>"Which dept is overstaffed, and why?"</td>
+        <td>decompose — SQL confirms, RAG explains, combine</td>
+        <td><span class="tag ok">built ✓</span></td></tr>
+    <tr><td><b>Predictive</b></td><td>what will happen</td>
+        <td>"Invest more where → more return?"</td>
+        <td>retrieval gives evidence + a <b>calculate/forecast</b> step</td>
+        <td><span class="tag new">new branch</span></td></tr>
+    <tr><td><b>Prescriptive</b></td><td>what to do</td>
+        <td>"What should we reorder / cut?"</td>
+        <td>draft → <b>human approves</b> (V2 workflow layer)</td>
+        <td><span class="tag new">future</span></td></tr>
+  </table>
+  <div class="why">🧩 <b>Key rule (answers "can we add branches later?"):</b> a new question
+  <i>shape</i> is <b>free</b> — the router just writes a different plan over the same roads. Only a
+  new <i>capability</i> (a forecast, a web search, an email connector) needs a new station. And
+  because the map is fixed, adding one is clean.</div>
+</div>
+
+<!-- ============ PANEL 3: THE FULL BRAIN MAP ============ -->
+<div class="panel">
+  <h2>3 · The full brain map</h2>
+  <div class="flow">
+    <div class="node pill">USER QUESTION</div>
+    <div class="arrow">▼</div>
+    <div class="node">GUARD<small>valid? · injection? · rate cap</small></div>
+    <div class="arrow">▼</div>
+    <div class="node">LOAD MEMORY<small>past turns of this chat (#16)</small></div>
+    <div class="arrow">▼</div>
+    <div class="node llm">ROUTER<small>reads the DATA CATALOG = what data exists<br>
+        + the agreed DEFINITIONS / BENCHMARKS for this company<br>
+        → in scope? picks the SHAPE, writes the PLAN</small></div>
+    <div class="arrow lbl">no-retrieval &nbsp; ▼ &nbsp;·&nbsp; single-shot &nbsp; ▼ &nbsp;·&nbsp; multi-step ▼</div>
+    <div class="row">
+      <div class="node">general /<br>out-of-scope<small>LLM answer or<br>"not in your data"</small></div>
+      <div class="node">one clear<br>lookup<small>→ retrieval core</small></div>
+      <div class="node calc">DECOMPOSE<small>the analyst path →<br>see zoom in Panel 4</small></div>
+    </div>
+    <div class="arrow">▼</div>
+    <div class="node built">RETRIEVAL CORE — shared<small>vector + BM25 + SQL → RRF merge · 87.5%</small></div>
+    <div class="arrow lbl">(hard path) GRADE: enough? — no → loop back, capped ↺</div>
+    <div class="notebook">notebook: { question, plan, rows, chunks, computed numbers, benchmark, … }</div>
+    <div class="arrow">▼</div>
+    <div class="node llm">COMBINE → the 3-LAYER ANSWER<small>see zoom in Panel 5</small></div>
+    <div class="arrow">▼</div>
+    <div class="node">SELF-CHECK<small>grounded? · Layer 3 never overrides the numbers</small></div>
+    <div class="arrow">▼</div>
+    <div class="node">SAVE MEMORY + RETURN<small>answer + citations + visible assumptions</small></div>
+    <div class="arrow lbl">↺ HUMAN challenges / asks for more — continues on memory</div>
+    <div class="node pill">ANSWER</div>
+  </div>
+  <div class="legend">
+    <span><span class="chip" style="background:var(--built);border:2px solid var(--built-b)"></span> already built</span>
+    <span><span class="chip" style="background:var(--llm);border:2px dashed var(--llm-b)"></span> needs the LLM (Gemini now → Claude/Bedrock later)</span>
+    <span><span class="chip" style="background:var(--calc);border:2px solid var(--calc-b)"></span> the analyst upgrade</span>
+    <span><span class="chip" style="background:var(--note);border:2px solid var(--note-b)"></span> the shared notebook</span>
+  </div>
+  <div class="why">📓 The <b>notebook</b> rides the whole trip. The router writes the <i>plan</i> into
+  it; workers <i>append</i> their findings (a growing list, so parallel workers never overwrite);
+  COMBINE reads the whole notebook at the end. Nothing reports to a boss — the map <i>is</i> the
+  orchestrator. <b>Tracing (#17)</b> logs every box: which node ran, what it found, #loops, cost.</div>
+</div>
+
+<!-- ============ PANEL 4: THE DECOMPOSE ZOOM ============ -->
+<div class="panel">
+  <h2>4 · Zoom: the decompose branch — two kinds of worker</h2>
+  <div class="decompose">
+    <div class="flow">
+      <div class="node calc">DECOMPOSE<small>writes a plan of N steps into the notebook</small></div>
+      <div class="arrow">▼ &nbsp; fires workers &nbsp; ▼</div>
+      <div class="row">
+        <div class="node built">① RETRIEVE<small>vector + BM25 + SQL → RRF<br>BUILT ✓</small></div>
+        <div class="node calc">② CALCULATE<small>tested, HARD-CODED functions<br>ratio · variance · trend<br>NOT LLM-written code</small></div>
+      </div>
+      <div class="arrow">▼</div>
+      <div class="node">BENCHMARK — "compared to WHAT?"<small>own data · company-configured · external (web)</small></div>
+      <div class="arrow lbl">⚠ benchmark missing? → ASK HUMAN (clarify)</div>
+    </div>
+  </div>
+  <p class="plain" style="margin-top:12px">Workers run <b>side-by-side</b> (breadth) or
+  <b>wait in order</b> (depth — a step that needs an earlier answer). A worker can be a mini-chain:
+  <b>retrieve, then calculate</b>.</p>
+  <div class="why warn">🔒 <b>Guardrail — the compute is caged.</b> The agent never <i>writes</i>
+  math. It <i>calls</i> pre-built, tested functions with parameters — like a calculator with fixed
+  buttons, not a blank Python prompt. Keeps ORCA's security rule (never LLM-run raw code/SQL) and
+  makes every computation eval-gradeable. Which functions we build is <b>revealed by the 100+ test
+  questions</b>, then hard-coded.</div>
+</div>
+
+<!-- ============ PANEL 5: THE 3-LAYER ANSWER ============ -->
+<div class="panel">
+  <h2>5 · Zoom: the 3-layer answer — LLM as analyst, not just writer</h2>
+  <p class="plain">So the LLM adds judgment <i>without</i> ever inventing a number. Worked on
+  "Which department is overstaffed?" — Marketing: 12 staff, budget 12, on-budget; target 100,
+  actual 78.</p>
+  <div class="layer l1"><b>Layer 1 · THE NUMBERS  (exact, from data)</b>
+    "Marketing: headcount 12, budget 12 — on budget. Target 100, actual 78."</div>
+  <div class="layer l2"><b>Layer 2 · GROUNDED DIAGNOSIS  (LLM connects the numbers — still traces to data)</b>
+    "Not overstaffed by headcount or budget — but 22% under target, so the salary spend isn't
+    returning its cost."</div>
+  <div class="layer l3"><b>Layer 3 · GENERAL INSIGHT  (LLM's own experience — a labelled suggestion)</b>
+    "General suggestion, <i>not</i> from your data: a fully-staffed department under target more
+    often has a skills / incentive gap than a headcount one — worth checking before cutting staff."</div>
+  <div class="why warn">⚖️ <b>Three rules keep it trustworthy:</b> (1) Layer 3 <b>never overrides</b>
+  Layers 1–2 — experience can suggest, never contradict the numbers. (2) Layer 3 is always a
+  <b>hypothesis to check</b>, never a verdict — because this answer can get someone fired.
+  (3) Its <b>eval is different</b>: Layers 1–2 grade against known answers; Layer 3 grades for
+  "labelled? humble? doesn't contradict the data?". <b>Decision support, not decision-making.</b></div>
+</div>
+
+<!-- ============ PANEL 6: THE WORKED TRACE ============ -->
+<div class="panel">
+  <h2>6 · One question, all the way through</h2>
+  <p class="plain"><b>"Which department is overstaffed?"</b></p>
+  <ol class="steps">
+    <li><b>Guard → Memory → Router.</b> Router reads the catalog, sees a headcount table, a
+        salary-budget table, a targets table → it's an <i>analysis</i> question → picks
+        <b>multi-step</b>, writes the plan.</li>
+    <li><b>Decompose</b> writes the plan into the notebook — Step A (retrieve): headcount + salary
+        budget per dept → SQL. Step B (calculate): spend vs budget → the <b>variance</b> function.
+        Step C (depth, waits for B): for any dept not over budget, pull target vs actual → SQL, then
+        the <b>attainment-ratio</b> function.</li>
+    <li><b>Benchmark</b> — "compared to what?" Here it's <i>their own</i> budgeted headcount + their
+        own targets (source #1). If no target existed, ORCA <b>asks you</b> instead of guessing.</li>
+    <li><b>Combine → the 3-layer answer</b> (the Panel-5 example) — numbers, then grounded diagnosis,
+        then the fenced suggestion.</li>
+    <li><b>Self-check</b> confirms Layers 1–2 are grounded and Layer 3 is labelled. <b>Return</b> with
+        citations. You can then <b>challenge it</b> ("check the industry norm") and the conversation
+        continues on memory.</li>
+  </ol>
+  <div class="why">🎯 The question came in as "overstaffed?" and ORCA gave back a <b>better, more
+  honest answer than the question</b> — while never letting the LLM invent a number. That's the
+  autonomous analyst.</div>
+</div>
+
+<!-- ============ PANEL 7: THE BIGGER PICTURE ============ -->
+<div class="panel">
+  <h2>7 · Two things this design also teaches</h2>
+  <div class="cols">
+    <div>
+      <p><b>ORCA is a repeatable, tailorable service.</b></p>
+      <p class="plain">Every company has its own industry, its own data, its own definitions of
+      words like "overstaffed". Building ORCA well = get sample files → pose 100+ questions
+      (simple → analysis → report) → eval → fix → tailor. That loop is re-runnable <b>per
+      company</b>. It's exactly the <b>AI Solutions / Implementation Engineer</b> job — and the
+      discovery half (understand their business + data + needs) is where 15 years of client-facing
+      experience is the <b>edge</b>, not a gap.</p>
+    </div>
+    <div>
+      <p><b>Build simple → complex, eval at each step.</b></p>
+      <p class="plain">The middle spine first (question → retrieval core → answer). Then the router.
+      Then decompose with the retrieve-worker. Then the <b>calculate-worker</b> and the
+      <b>3-layer answer</b> last. Each addition must out-grade the simpler version on the eval, or
+      it doesn't ship. The autonomous-analyst branch is the <b>destination</b>, not step one.</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
