@@ -41,7 +41,10 @@ QUESTIONS = [
     ("D20", "What is the difference between Naive RAG and Advanced RAG?", "§2.3.1/2 p4"),
 ]
 
-brain = build_brain()
+# pinned to the survey: this eval's baseline was measured on that document
+# alone, and it must stay comparable across runs (the brain's DEFAULT now
+# searches all of the tenant's documents together)
+brain = build_brain(text_file_id="agentic_rag_survey")
 
 for qid, q, expected in QUESTIONS:
     final = brain.invoke({"question": q})

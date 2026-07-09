@@ -27,8 +27,18 @@ print("FINAL NOTEBOOK AFTER THE TRIP")
 print("=" * 72)
 print(f"question:      {final['question']}")
 print(f"text_hits:     {len(final.get('text_hits', []))} passages retrieved")
-print(f"number_tables: {len(final.get('number_tables', []))} exact-number tables")
+
+# what the numbers leg planned + computed (Session 13)
+nums = final.get("number_result", {})
+if nums.get("needed"):
+    print(f"numbers leg:   computed {nums.get('computed')} from sheet {nums.get('sheet')!r}"
+          + (f", filters: {nums['filters']}" if nums.get("filters") else "")
+          + (f" — ERROR: {nums['error']}" if nums.get("error") else ""))
+    if nums.get("sql"):
+        print(f"               ran: {nums['sql']}")
+else:
+    print("numbers leg:   not a numbers question — stayed quiet")
 print()
-print("answer (plain stitch — no AI yet):")
+print("answer:")
 print("-" * 72)
 print(final["answer"])

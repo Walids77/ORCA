@@ -16,9 +16,9 @@ class Notebook(TypedDict, total=False):
     # writes this: a list of retrieved chunks, each = {id, text, metadata, ...}
     text_hits: list[dict]
 
-    # the NUMBERS leg (SQL store) writes this: the exact-number tables that exist
-    # for this tenant, so we know what could be queried. Each = {sheet, columns, ...}
-    number_tables: list[dict]
+    # the NUMBERS leg (SQL store) writes this: the LLM's query plan + the exact
+    # result our code computed (or {"needed": False} for non-number questions)
+    number_result: dict
 
     # the COMBINE station writes the final answer here
     answer: str

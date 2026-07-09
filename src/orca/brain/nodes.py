@@ -11,6 +11,7 @@ node replaces it in Step 2.
 
 from orca.brain.state import Notebook
 from orca.brain.llm import ask
+from orca.brain.numbers import load_catalog, catalog_text, plan_query, run_plan, result_text
 from orca.stores.hybrid import HybridSearcher
 from orca.stores.sql_store import SqlStore
 
@@ -25,21 +26,25 @@ def make_search_text_node(searcher: HybridSearcher, k: int = 5):
 
 
 # ── Leg 3: NUMBERS (the exact-number SQL store) ──
-# On this straight skeleton we don't yet let an LLM write SQL (that's a later
-# branch). We just surface WHICH exact-number tables exist, so the combine step
-# knows what could be asked. This proves the leg is wired to the real SQL store.
-def make_list_numbers_node(sql: SqlStore):
-    def list_numbers_node(notebook: Notebook) -> dict:
-        tables = [dict(row) for row in sql.catalog()]
-        return {"number_tables": tables}
+# Session 13: the leg now ANSWERS instead of just listing tables. Two moves
+# (see numbers.py): the LLM fills a structured form (which sheet / operation /
+# column / filters) — MOVE 1 — and our validated code builds + runs the SQL
+# itself — MOVE 2. The LLM never writes SQL.
+def make_answer_numbers_node(sql: SqlStore, company_id: str):
+    catalog = load_catalog(sql, company_id)
+    menu = catalog_text(catalog)
 
-    return list_numbers_node
+    def answer_numbers_node(notebook: Notebook) -> dict:
+        plan = plan_query(notebook["question"], menu)
+        result = run_plan(sql, catalog, plan)
+        return {"number_result": result}
+
+    return answer_numbers_node
 
 
 # ── COMBINE (Step 1 = plain stitch, NO AI yet) ──
 def plain_combine_node(notebook: Notebook) -> dict:
     hits = notebook.get("text_hits", [])
-    tables = notebook.get("number_tables", [])
 
     lines = [f"Question: {notebook['question']}", ""]
     lines.append(f"Found {len(hits)} text passage(s):")
@@ -49,10 +54,9 @@ def plain_combine_node(notebook: Notebook) -> dict:
         preview = " ".join(h.get("text", "").split())[:140]
         lines.append(f"  {i}. [{where}] {preview}...")
 
-    lines.append("")
-    lines.append(f"Exact-number tables available: {len(tables)}")
-    for t in tables:
-        lines.append(f"  - {t.get('sheet')} ({t.get('row_count')} rows)")
+    numbers = result_text(notebook.get("number_result", {}))
+    if numbers:
+        lines += ["", "Exact numbers:", numbers]
 
     return {"answer": "\n".join(lines)}
 
@@ -73,12 +77,26 @@ def llm_combine_node(notebook: Notebook) -> dict:
         passages.append(f"[{i}] ({where})\n{h.get('text', '')}")
     evidence = "\n\n".join(passages) if passages else "(no passages retrieved)"
 
+    # Session 13: the numbers leg's computed result rides along as its own
+    # evidence block. These figures were computed by a database query, never by
+    # an LLM — the answer-writer must use them verbatim, cited as [numbers].
+    numbers = result_text(notebook.get("number_result", {}))
+    numbers_block = (
+        f"\n\nEXACT NUMBERS (computed directly from the company's spreadsheet "
+        f"data by a database query — use these figures VERBATIM, cite as "
+        f"[numbers]):\n{numbers}" if numbers else ""
+    )
+
     prompt = (
         "You are ORCA, a business document assistant. Answer the question using "
-        "ONLY the passages below. If the answer is not in them, reply exactly: "
+        "ONLY the passages and the EXACT NUMBERS block below. If the answer is "
+        "in neither, reply exactly: "
         "\"I can't answer that from the uploaded documents.\" "
-        "Cite the passage numbers you used, like [1] or [2].\n\n"
+        "Never compute or estimate figures yourself — only repeat figures from "
+        "the EXACT NUMBERS block. Cite the passage numbers you used, like [1] "
+        "or [2], and cite computed figures as [numbers].\n\n"
         f"QUESTION: {notebook['question']}\n\n"
         f"PASSAGES:\n{evidence}"
+        f"{numbers_block}"
     )
     return {"answer": ask(prompt)}

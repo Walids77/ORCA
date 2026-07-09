@@ -24,3 +24,9 @@ ORCA_BRIEF.md
 CLAUDE.md
 .claude/
 memory/
+
+# Session-13 artifacts holding REAL business data (client/supplier names, figures)
+# — local only until the neutral public demo corpus (roadmap item #2) exists
+eval/numbers_eval_2026-07-09.md
+brain_trips.html
+scripts/run_numbers_eval.py

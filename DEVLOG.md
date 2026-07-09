@@ -2,6 +2,51 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-09 — Session 13: numbers leg ANSWERS + total-row detection fixed + 10/10 eval
+- **The numbers leg now ANSWERS** (was: only listed tables). Two caged moves in the new
+  `brain/numbers.py`: MOVE 1 — the LLM sees the data **catalog** (sheets · columns + types ·
+  one sample row) and fills a structured **form** (sheet / SUM·AVG·MIN·MAX·COUNT·LIST /
+  column / filters / group-by); MOVE 2 — **our validated code** builds + runs the SQL
+  (identifiers checked against the catalog, values parameterised, Total rows always excluded).
+  The LLM never writes SQL. Combine gets the result as an "EXACT NUMBERS — use verbatim,
+  cite [numbers]" block.
+- **Known-answer eval on the real retail Excel** (10 figure-questions, 4 Walid's + 6 Claude's
+  incl. a trap; `scripts/run_numbers_eval.py`, record in `eval/numbers_eval_2026-07-09.md`,
+  kept local — real business data): run 1 = 9/10 on paper but **honestly 7/10** — Walid
+  challenged two figures and both were WRONG from one root bug.
+- **Root bug: UNLABELLED total rows** (a grand-total row with no "Total" text) passed the
+  keyword detector and doubled sums (average/pending questions). **Fix = 3 detectors,
+  union:** label (existing) · **formula** (Walid's idea — a 2nd formula-mode pass over the
+  file: a vertical `=SUM(...)` down the sheet's OWN column = a total row; row-wise sums and
+  ranges pointing at OTHER sheets must not trip it — the Summary's monthly rows are built
+  from `=SUM(Sales!…)` and are data) · **shape** (mostly-empty row whose number equals the
+  column's sum). After the fix every column with a printed total matches to the cent.
+- **2nd fix:** a no-rows query used to surface as `value = None` and the answer-writer once
+  echoed "sales were None" — the evidence block now says **"NO DATA — matched no rows"** in
+  words → the refusal is deterministic. Final eval: **10/10** (trap included).
+- **METHOD LESSON:** run 1's answer key was computed from the ingested store → it inherited
+  the store's bug and graded two wrong answers PASS. Keys must be verified against the
+  SOURCE, and out-of-range figures chased (Walid's eyeball check caught what the green
+  scoreboard missed).
+- **Stage 6 data-quality scan** (seed of roadmap #11): ingestion now REPORTS source-file
+  problems with exact rows — found 14 real ones (year-1900 dates, text like "23 april" in a
+  date column). Face-value rule locked: store what the cell shows; read formulas only to
+  UNDERSTAND values; never auto-correct data — the user fixes the source.
+- **Scope growth proven on live questions:** LIST operation (capped, validated) for
+  "show me…" questions; text leg now searches the WHOLE tenant corpus by default (client
+  names live in free-text remarks; the survey eval stays pinned to its document). Verified:
+  a client-purchases question answered complete-and-correct from remark chunks; a
+  wish-list filter question exact; "top clients by sales" correctly REFUSED (no client
+  column exists — agreed: fixing the sheet is the user's job, ORCA never invents columns).
+- **Visual:** `brain_trips.html` — three real trips (numbers-carried · text-carried · trap
+  refused) drawn station by station with the actual form/SQL/chunks (kept local — contains
+  real business data).
+- **Next session (rehearse together first, then build, then eval):** (1) make the two legs
+  run in PARALLEL (fan-out/fan-in — the first real branch); (2) eval the never-tested
+  BOTH-legs question type (exact number + text explanation in one answer = ORCA's
+  differentiator); (3) let that eval's evidence justify the router. Ratio math (average
+  basket = sales ÷ invoices) logged as the calculate-worker's first eval case.
+
 ## 2026-07-09 — Session 12: brain SKELETON built + first answer-level eval
 - **Built the straight-line brain** `src/orca/brain/` (the middle spine, no branches/loops yet):
   `question → text leg → numbers leg → combine → answer`. The notebook (shared state), the three

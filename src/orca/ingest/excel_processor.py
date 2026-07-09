@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import logging
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -66,6 +67,10 @@ class SheetTable:
     aux_blocks: list[AuxBlock] = field(default_factory=list)  # side blocks kept aside
     aggregate_rows: list[int] = field(default_factory=list)   # indices of Total/summary rows
     column_meta: dict[str, dict] = field(default_factory=dict)  # per-column tags (stage 5)
+    quality_issues: list[str] = field(default_factory=list)   # stage 6: source-data problems
+                                    # found at ingestion (impossible dates, text in a
+                                    # date column...). NEVER auto-corrected — reported,
+                                    # so the user can fix the source file (item #11).
 
     @property
     def n_rows(self) -> int:
@@ -290,6 +295,76 @@ def _detect_aggregate_rows(rows: list[dict[str, Any]]) -> list[int]:
     return flagged
 
 
+# Detector 2 (Session 13): read the FORMULA behind each cell. A cell computed
+# by =SUM(...) / =SUBTOTAL(...) over a VERTICAL range (many rows) is a total
+# cell, label or no label. A row-wise formula like =SUM(F5:J5) (one row,
+# several columns) is a normal data cell and must NOT trip this.
+_AGG_FUNCS = re.compile(r"\b(SUM|SUBTOTAL|AVERAGE|AVERAGEA|COUNT|COUNTA|MAX|MIN)\s*\(",
+                        re.IGNORECASE)
+_CELL_RANGE = re.compile(r"\$?([A-Z]{1,3})\$?(\d+)\s*:\s*\$?([A-Z]{1,3})\$?(\d+)")
+_FULL_COLUMN = re.compile(r"\$?[A-Z]{1,3}\s*:\s*\$?[A-Z]{1,3}(?![A-Z0-9])")
+# A range pointing at ANOTHER sheet, like Sales!B2:B715 or 'Client List'!A:A.
+# A monthly Summary row that SUMs the detail sheets is a DATA row of its own
+# table, not a total row — so sheet-qualified ranges must not count.
+_OTHER_SHEET_REF = re.compile(
+    r"(?:'[^']*'|[A-Za-z_][\w.]*)!\$?[A-Z]{1,3}(?:\$?\d+)?"
+    r"(?:\s*:\s*\$?[A-Z]{1,3}(?:\$?\d+)?)?"
+)
+
+
+def _is_vertical_aggregate(formula: str) -> bool:
+    """True if the formula aggregates DOWN a column OF ITS OWN SHEET (a total),
+    not across a row and not over a different sheet."""
+    if not _AGG_FUNCS.search(formula):
+        return False
+    own = _OTHER_SHEET_REF.sub("", formula)   # drop other-sheet ranges first
+    if _FULL_COLUMN.search(own):              # =SUM(B:B) — whole own column
+        return True
+    for m in _CELL_RANGE.finditer(own):       # =SUM(B2:B715) — rows differ
+        if m.group(2) != m.group(4):
+            return True
+    return False
+
+
+def _formula_aggregate_rows(ws) -> set[int]:
+    """1-based Excel row numbers holding at least one vertical-aggregate formula."""
+    flagged: set[int] = set()
+    for i, row in enumerate(ws.iter_rows(values_only=True)):
+        for cell in row:
+            if isinstance(cell, str) and cell.startswith("=") and _is_vertical_aggregate(cell):
+                flagged.add(i + 1)
+                break
+    return flagged
+
+
+# Detector 3 (Session 13, fallback for hand-typed totals with no formula):
+# a mostly-empty row whose numeric cell equals its column's sum over all the
+# other rows is a total row by SHAPE (same lesson as the PDF table stage).
+def _detect_sum_shaped_rows(columns: list[str], rows: list[dict[str, Any]],
+                            flagged: set[int]) -> list[int]:
+    extra = []
+    for i, row in enumerate(rows):
+        if i in flagged:
+            continue
+        filled = [c for c in columns if row.get(c) is not None]
+        if not filled or len(filled) > max(1, len(columns) // 2):
+            continue                          # a real data row is mostly filled
+        for col in filled:
+            v = row.get(col)
+            if not isinstance(v, (int, float)) or isinstance(v, bool) or v == 0:
+                continue
+            others = sum(
+                r2.get(col) for j, r2 in enumerate(rows)
+                if j != i and j not in flagged
+                and isinstance(r2.get(col), (int, float))
+                and not isinstance(r2.get(col), bool)
+            )
+            if abs(v - others) <= 0.02:       # its value IS the column's sum
+                extra.append(i)
+                break
+    return extra
+
+
 # =============================================================================
 # STAGE 5 - tag each column's meaning (semantic type + aliases + real data type)
 # =============================================================================
@@ -345,6 +420,45 @@ def _tag_columns(columns: list[str], rows: list[dict[str, Any]],
 
 
 # =============================================================================
+# STAGE 6 - data-quality scan (report, NEVER auto-correct)
+# =============================================================================
+# Face-value rule (Walid, Session 13): the VALUE a cell shows is what we store.
+# Formulas are only read to UNDERSTAND a value (e.g. "this is a vertical SUM ->
+# total row"). When a face value itself is broken — a date stored in year 1900,
+# text like "23 apri" sitting in a date column — we must not guess a correction:
+# we STORE it as-is and REPORT it, so the user fixes the source file.
+_MIN_PLAUSIBLE_YEAR = 2000          # business data before 2000 = a mistyped date
+
+
+def _scan_quality(sheet_name: str, columns: list[str], rows: list[dict[str, Any]],
+                  source_rows: list[int], aggregate_rows: list[int],
+                  column_meta: dict[str, dict]) -> list[str]:
+    """Find source-data problems in date columns. Returns plain-English notes."""
+    issues: list[str] = []
+    agg = set(aggregate_rows)
+    date_cols = [c for c in columns if column_meta.get(c, {}).get("data_type") == "date"]
+    for col in date_cols:
+        for i, row in enumerate(rows):
+            if i in agg:
+                continue
+            v = row.get(col)
+            excel_row = source_rows[i]
+            if isinstance(v, _dt.datetime) and v.year < _MIN_PLAUSIBLE_YEAR:
+                issues.append(
+                    f"{sheet_name}!row {excel_row}: '{col}' is {v.date()} — a year-"
+                    f"{v.year} date is almost surely a data-entry slip (Excel kept "
+                    f"the day/month but not the intended year). Fix the year in the file."
+                )
+            elif isinstance(v, str):
+                issues.append(
+                    f"{sheet_name}!row {excel_row}: '{col}' holds text {v!r} instead "
+                    f"of a real date — date filters (e.g. 'March 2026') will miss "
+                    f"this row until it is retyped as a date."
+                )
+    return issues
+
+
+# =============================================================================
 # STAGE 1-3 - the main entry point
 # =============================================================================
 def extract_workbook(excel_path: str | Path) -> WorkbookExtract:
@@ -361,6 +475,19 @@ def extract_workbook(excel_path: str | Path) -> WorkbookExtract:
     except Exception as e:  # openpyxl raises various types for bad files
         raise ExcelProcessingError(f"Could not open Excel file: {e}") from e
 
+    # Session 13: a second, formula-mode pass over the same file. Rows whose
+    # cells are computed by a vertical =SUM(...)/=SUBTOTAL(...) are total rows
+    # even when they carry no "Total" label (that unlabelled grand-total row in
+    # the Orders/Sales sheets is exactly what the keyword detector missed).
+    formula_rows: dict[str, set[int]] = {}
+    try:
+        wb_formulas = openpyxl.load_workbook(path, data_only=False, read_only=True)
+        for sheet_name in wb_formulas.sheetnames:
+            formula_rows[sheet_name] = _formula_aggregate_rows(wb_formulas[sheet_name])
+        wb_formulas.close()
+    except Exception as e:                     # never let the extra pass kill ingestion
+        logger.warning("Formula pass failed (%s) - relying on label + shape detectors", e)
+
     result = WorkbookExtract(file_path=str(path))
 
     try:
@@ -372,7 +499,9 @@ def extract_workbook(excel_path: str | Path) -> WorkbookExtract:
             # don't waste time/memory processing blank space.
             while grid and all(_is_blank(c) for c in grid[-1]):
                 grid.pop()
-            result.sheets.append(_extract_sheet(sheet_name, grid))
+            result.sheets.append(
+                _extract_sheet(sheet_name, grid, formula_rows.get(sheet_name, set()))
+            )
     finally:
         wb.close()
 
@@ -380,9 +509,11 @@ def extract_workbook(excel_path: str | Path) -> WorkbookExtract:
     return result
 
 
-def _extract_sheet(sheet_name: str, grid: list[tuple]) -> SheetTable:
+def _extract_sheet(sheet_name: str, grid: list[tuple],
+                   formula_agg_rows: set[int] | None = None) -> SheetTable:
     """Stages 2-3 for one sheet: split into blocks, read the MAIN table, keep the
-    side blocks aside."""
+    side blocks aside. `formula_agg_rows` = 1-based Excel rows the formula pass
+    flagged as vertical aggregates (totals)."""
     # Empty sheet.
     if not grid or all(all(_is_blank(c) for c in row) for row in grid):
         logger.warning("Sheet %r is empty - skipping", sheet_name)
@@ -441,9 +572,21 @@ def _extract_sheet(sheet_name: str, grid: list[tuple]) -> SheetTable:
         source_rows.append(excel_row)                     # for later citations
 
     # STAGE 4: flag Total / summary rows so they never double-count in sums.
-    aggregate_rows = _detect_aggregate_rows(rows)
+    # Three detectors, union of all (Session 13):
+    #   1. label   — a short "Total"/"Average" text cell
+    #   2. formula — the cell is computed by a vertical =SUM(...) (no label needed)
+    #   3. shape   — mostly-empty row whose number equals its column's sum
+    flagged = set(_detect_aggregate_rows(rows))
+    if formula_agg_rows:
+        flagged |= {i for i, excel_row in enumerate(source_rows)
+                    if excel_row in formula_agg_rows}
+    flagged |= set(_detect_sum_shaped_rows(columns, rows, flagged))
+    aggregate_rows = sorted(flagged)
     # STAGE 5: tag each column's meaning + real data type.
     column_meta = _tag_columns(columns, rows, aggregate_rows)
+    # STAGE 6: scan for source-data problems (stored as-is, reported to the user).
+    quality_issues = _scan_quality(sheet_name, columns, rows, source_rows,
+                                   aggregate_rows, column_meta)
 
     logger.info(
         "Sheet %r: header at row %d, %d columns, %d data rows (%d total-rows), %d side block(s)",
@@ -459,4 +602,5 @@ def _extract_sheet(sheet_name: str, grid: list[tuple]) -> SheetTable:
         aux_blocks=aux_blocks,
         aggregate_rows=aggregate_rows,
         column_meta=column_meta,
+        quality_issues=quality_issues,
     )
