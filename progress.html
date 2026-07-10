@@ -201,7 +201,7 @@
 <body>
 
 <h1>🐋 ORCA — Progress</h1>
-<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 9, 2026</strong></p>
+<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 10, 2026</strong></p>
 
 <!-- ============ HERO: WHERE ORCA STANDS ============ -->
 <div class="dash">
@@ -452,17 +452,21 @@
 <div class="card phase">
   <div class="letter l-now">B</div>
   <div class="body">
-    <h3>Build the brain — orchestrator on LangGraph <span class="badge b-now">SKELETON Jul 9</span></h3>
+    <h3>Build the brain — orchestrator on LangGraph <span class="badge b-now">ROUTER Jul 10</span></h3>
     <p>Node by node: a router reads the question and picks a path — answer directly /
     one simple lookup / decompose into sub-questions (2D model: parallel branches +
     dependent steps) — then combines results into one answer with citations.
     Built in from day one: conversation memory + tracing.
-    <strong>Full target map now drawn</strong> (<code>langGraph.html</code>), including the
-    <strong>"autonomous analyst"</strong> upgrade — a caged calculate-worker + a benchmark
-    step + a 3-layer answer, so ORCA can <em>compute and judge</em>, not just retrieve.
-    <strong>LLM = Gemini <code>gemini-2.5-flash</code> for now</strong> (behind a
-    one-file adapter) → Claude via Bedrock once AWS unblocks it.
-    <strong>Next: build the skeleton</strong> (the middle spine), then earn each branch by eval.</p>
+    <strong>Built so far, each step eval-gated:</strong> the straight spine (Jul 9) →
+    <strong>parallel legs</strong> (fan-out/fan-in, −28% time) → the <strong>ROUTER</strong>
+    (picks text / numbers / both — 13/13 correct — and <em>splits</em> compound questions,
+    one focused sub-question per leg) → plus the <strong>token/cost meter</strong> in the
+    one-file LLM adapter (every call: tokens + $ per answer).
+    <strong>LLM = Gemini <code>gemini-2.5-flash</code> for now</strong> (behind that
+    adapter) → Claude via Bedrock once AWS unblocks it.
+    <strong>Next (Session 15): the router becomes a PLANNER</strong> — it writes a checklist
+    (question · lane · waits-for) and a capped plan-runner executes it in parallel waves =
+    the depth axis (best month → <em>that</em> month's purchases).</p>
   </div>
 </div>
 <div class="connector"></div>
@@ -507,6 +511,11 @@
 <h2>📓 Session log — click a session to read it</h2>
 
 <details class="session" open>
+  <summary>Jul 10 · Session 14 <span class="when">parallel legs + router + token meter — three designs raced on one scoreboard</span></summary>
+  <p>The session where the brain got its <b>first real branches</b> — and every design change had to <b>race the previous one on the same 13 questions</b>. First, a small tool with big consequences: the <b>token &amp; cost meter</b> (roadmap item #20) built into the one-file LLM adapter — every AI call now records its purpose, its tokens (taken from the provider's own usage report, never our guess) and its cost in dollars; its acceptance check proved the counts match the provider to the token, and taught us that a one-character answer can bill <b>43 "thinking" tokens</b> the model spends reasoning privately. Then the <b>mixed question set</b>: 13 questions of three shapes (5 text · 5 numbers · 3 <b>both-legs</b> — the never-before-graded type that IS ORCA's differentiator), every known answer verified against the <i>source file</i>, never the store (the Session-13 lesson). <b>Run 1, the old straight line: 9/13</b> — numbers perfect, but <b>both-legs 0/3</b>, and the diagnosis was gold: the one-shot numbers form <i>declines</i> compound questions ("highest month AND what did clients buy"), so no exact number ever reaches the answer-writer. <b>Run 2, parallel legs</b> (the two legs now leave the start together and meet at combine — the graph's first fan-out): <b>11/13, 28% faster</b> — though we recorded honestly that the both-legs improvement was an AI coin-flip, not the wiring (the smoke test also caught a real concurrency bug: the SQL store needed one connection per thread). <b>Run 3, the ROUTER</b>: a new first station that reads the data catalog, picks the lane — text / numbers / both, <b>13 of 13 picked right</b> — and, the real fix, <b>splits</b> a compound question into one focused sub-question per leg (the supplier question became "total laded cost for this supplier?" + "do the remarks mention problems?"): <b>11/13 in 5.7s</b>, with the first-ever graded both-legs pass — exact total, both supplier-credit remarks, every part cited. Honest verdict written in the record: the router ships on <b>determinism</b>, not cost (its own toll roughly eats what it saves today). And the question that failed all three runs — "highest month of 2026, and what did clients buy <i>that</i> month" — failed <b>by design</b>: its text half needs the number half's <i>answer</i> first. That's the <b>depth axis</b>, and it set next session's locked plan, which Walid designed himself in the closing discussion: <b>the router becomes a PLANNER</b> — it writes a checklist (focused question · lane · waits-for), and one capped <b>plan-runner</b> station executes it in parallel <b>waves</b> over the same proven legs, stretching the fixed map vertically or horizontally per question. Three eval cases are already waiting for it.</p>
+</details>
+
+<details class="session">
   <summary>Jul 9 · Session 13 <span class="when">numbers leg answers + total-row fix + 10/10 eval on the real Excel</span></summary>
   <p>The session that proved ORCA's <b>differentiating half</b>: exact numbers from a real business spreadsheet. The numbers leg used to only <i>list</i> which tables exist — now it <b>answers</b>, with a caged two-move design: <b>move 1</b>, the AI reads a <b>catalog</b> of the data (every sheet, its columns and types, one example row) and fills a small <b>form</b> — which sheet, which operation (SUM / AVG / MIN / MAX / COUNT / LIST), which column, which filters; <b>move 2</b>, <b>our tested code</b> checks every form field against the catalog, builds the database query itself, and always excludes Total rows. <b>The AI never writes SQL.</b> Then the eval: 10 known-answer figure-questions on the real retail Excel (4 Walid's, 6 Claude's incl. a trap). Run 1 scored 9/10 — but <b>Walid challenged two "passing" figures and both were WRONG</b>: an <b>unlabelled grand-total row</b> (a totals row with no "Total" text anywhere) had slipped past the keyword detector and sat in the store as data, silently <b>doubling</b> sums (average sale showed 75 instead of the true 37.58; pending sales 174 instead of 87). Even the eval's answer key had inherited the bug — the honest score was 7/10, and the permanent lesson is written down: <b>an answer key must be computed independently of the pipeline it grades, and a figure that looks off must be chased even when the scoreboard is green</b>. The fix used <b>Walid's own idea — read the formula behind each cell</b>: a second, formula-mode pass over the file flags any row computed by a vertical <code>=SUM(...)</code> down its own column, label or no label (with two refinements the proof-check forced: row-wise sums don't count, and sums pointing at <i>another</i> sheet don't count — the Summary's monthly rows are built from <code>=SUM(Sales!…)</code> and are data, not totals). Plus a shape fallback (a mostly-empty row whose lone number equals its column's sum) and the original label detector — union of all three. After the fix, <b>every column with a printed total matches to the cent</b>, and a second small fix (when a query matches nothing, the evidence now says "NO DATA" in words instead of a confusing <code>None</code>) made the trap refusal deterministic: <b>final score 10/10</b>. Bonus deliveries: a <b>stage-6 data-quality scan</b> that reports source-file problems with exact row numbers (found 14 real ones — year-1900 dates, text like "23 april" in a date column; agreed rule: ORCA stores face values and <i>reports</i> problems, the user fixes the source — ORCA never invents data or columns); the text leg now searches the <b>whole corpus</b> (a client-purchases question was answered complete-and-correct from free-text remarks, verified against the sheet); and <code>brain_trips.html</code> — three real trips drawn station by station. Next session (rehearse together first, then build, then eval): run the two legs in <b>parallel</b>, then eval the never-tested <b>both-legs question</b> (number + explanation in one answer), and only then decide the router on that evidence.</p>
 </details>

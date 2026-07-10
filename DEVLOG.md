@@ -2,7 +2,35 @@
 
 > Newest entry first. One dated entry per work session.
 
-## 2026-07-09 — Session 13: numbers leg ANSWERS + total-row detection fixed + 10/10 eval
+## 2026-07-10 — Session 14: parallel legs + router + token meter — three designs eval'd head-to-head
+- **Token/cost meter built (roadmap item #20)** into the one-file LLM adapter: every call
+  records purpose · tokens in/out **from the provider's own usage report** · cost at the
+  paid-tier price table (free tier today, so actual spend $0; the Bedrock swap only changes
+  the table). Acceptance check passed: meter split sums exactly to the provider's total.
+  Learned: hidden **thinking tokens** are billed as output — a 1-character answer billed 43
+  output tokens.
+- **Parallel legs (first real branch):** text + numbers legs now fan out from START together
+  and fan in at combine. Smoke test caught a real concurrency bug — SQLite refuses
+  cross-thread connections → the SQL store now opens one connection per thread.
+- **Router built:** reads the spreadsheet catalog + the text-document list, picks the lane
+  (text / numbers / both), and **splits compound questions** into a focused sub-question per
+  leg. Unreadable reply → safe fallback to "both". All three wirings stay selectable.
+- **Three-design eval** — one fixed 13-question mixed set (5 text · 5 numbers · 3 both-legs,
+  2 traps; keys verified against the SOURCE, never the store; record local-only, real names):
+  **straight 9/13 (both-legs 0/3, 8.6 s) → parallel 11/13 (6.2 s, −28%) → router 11/13,
+  lane picks 13/13, 5.7 s.** First-ever graded BOTH-legs pass = the supplier question (exact
+  total [numbers] + the two supplier-credit remarks cited) — ORCA's differentiator working.
+- **Honesty findings:** run 2's both-legs jump was an LLM coin-flip (the one-shot form
+  sometimes engages on compound questions), NOT the parallel wiring — the router's
+  deterministic split is the real fix and the reason it ships; its cost saving is ~neutral
+  at this corpus size (the router pays its own toll). The February depth question (highest
+  month → what was bought THAT month) failed all 3 runs **by design**: a dependency, not a
+  lane choice.
+- **Session-15 plan locked with Walid:** router→**planner** (writes a checklist: focused
+  question · lane · waits-for) + a capped **plan-runner** that executes the checklist in
+  parallel **waves** over the same proven legs. Three eval cases ready: February ·
+  "best month 2026 vs 2025 + items of each" · the average-basket ratio (calculate step).
+- Commits: `b9cf641` (code) + this session's docs commit.
 - **The numbers leg now ANSWERS** (was: only listed tables). Two caged moves in the new
   `brain/numbers.py`: MOVE 1 — the LLM sees the data **catalog** (sheets · columns + types ·
   one sample row) and fills a structured **form** (sheet / SUM·AVG·MIN·MAX·COUNT·LIST /

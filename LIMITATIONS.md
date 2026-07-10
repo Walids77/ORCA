@@ -13,25 +13,44 @@
   *Fix path:* stronger table mode / OCR settings, and the Claude-oracle method
   (compare against the chatbot) — eval-graded, later.
 
-- **PDF number-tables aren't in SQL yet.** The PDF **prose** path is done, but tables
-  with numbers (purchase orders, invoices, the salary slip) are extracted and not yet
-  typed + stored in SQL. *Fix path:* the table→SQL tidy stage (carry headers across
-  pages, strip `$`/commas to real numbers, flag total rows — reuses the Excel logic).
+## The brain
+
+- **Dependency (depth) questions aren't answerable yet.** "Which month had the
+  highest sales, and what did clients buy THAT month?" fails: the text half needs
+  the number half's ANSWER before it can search, and today's router only picks
+  lanes — it can't chain steps. Failed all 3 designs in the Session-14 eval, by
+  design. *Fix path (Session 15, locked):* router→planner (a checklist with
+  waits-for dependencies) + a capped plan-runner executing it in waves.
+
+- **Compound questions depend on the router.** Without the router, the one-shot
+  numbers form coin-flips on questions that mix a figure with an explanation
+  (engaged in one eval run, declined in another). The router's question-splitting
+  fixes this deterministically — so the router lane is now the production path.
+
+- **No conversation memory yet** — each question stands alone; "and compare it to
+  last year?" is meaningless. *Fix path:* LangGraph checkpointing (brief #16).
 
 ## Retrieval
 
-- **Pure semantic search is weak on "metadata" questions.** Questions like *"who are
-  the authors?"*, *"what's the title?"*, *"which page/when?"* rank poorly, because a
-  list of names/universities doesn't embed close to the abstract question. The right
-  chunk is usually still in the top-5 (so an answer step recovers it), but ranking is
-  imperfect. *Fix path (already on the roadmap):* hybrid keyword/BM25 search (brief
-  #15), the stronger embedder (Bedrock Titan V2), and structured title/author metadata
-  — all eval-graded.
+- **Whole-corpus search can crowd out a niche document's chunk.** The survey's
+  "primary bottleneck" question passed when search was pinned to the survey
+  (Session 12) but fails consistently on the whole tenant corpus (Session 14) —
+  the Excel's row-chunks compete for the top-5 spots. *Fix path:* retrieval
+  precision (raise k / a reranker once Bedrock unblocks), eval-graded.
+
+- **LIST answers cap at 20 rows.** A month-detail request ("everything sold in
+  February" — ~37 rows) would truncate. *Fix path:* raise the cap or aggregate,
+  when the depth branch makes LIST the month-detail engine (Session 15 eval).
+
+## Cost / scale
+
+- **The data catalog rides inside two prompts** (router + numbers form), so
+  per-question token cost grows with the tenant's data. Fine at demo size;
+  *fix path:* catalog summarization or caching when the corpus grows.
 
 ## Testing / ops (owed, tracked in `ORCA_BRIEF.md`)
 
-- **No formal eval harness yet** — retrieval accuracy is tested ad-hoc, not scored on a
-  fixed known-answer set. This is the next build step.
-- **No automated test suite / CI gate yet** — the pre-push checklist is run by hand.
-- **No black-box logging or API-cost monitor yet** — only console logging; needed once
-  paid APIs (Bedrock/Claude) replace the free local model.
+- **No automated test suite / CI gate yet** — the pre-push checklist is run by
+  hand; evals are recorded (`eval/`) but launched manually.
+- **No step-level tracing yet** (Langfuse/Phoenix, brief #17) — the token/cost
+  meter (item #20, done) covers spend, not full traces.
