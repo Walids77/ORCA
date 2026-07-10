@@ -12,6 +12,14 @@ class Notebook(TypedDict, total=False):
     # written in at the very start
     question: str
 
+    # the ROUTER (Session 14) writes these: which lane(s) to run, plus a
+    # FOCUSED sub-question per leg — compound questions get split here so each
+    # leg sees only its own half (the run-1/run-2 evidence: the one-shot
+    # numbers form coin-flips on compound questions)
+    lane: str                 # "text" | "numbers" | "both"
+    text_question: str
+    numbers_question: str
+
     # the TEXT leg (meaning + keyword search, already fused by HybridSearcher)
     # writes this: a list of retrieved chunks, each = {id, text, metadata, ...}
     text_hits: list[dict]

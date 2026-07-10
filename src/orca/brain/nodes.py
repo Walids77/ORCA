@@ -9,6 +9,8 @@ non-AI stitch — it just gathers what the legs found. The real Gemini thinking
 node replaces it in Step 2.
 """
 
+import json
+
 from orca.brain.state import Notebook
 from orca.brain.llm import ask
 from orca.brain.numbers import load_catalog, catalog_text, plan_query, run_plan, result_text
@@ -16,10 +18,67 @@ from orca.stores.hybrid import HybridSearcher
 from orca.stores.sql_store import SqlStore
 
 
+# ── ROUTER (Session 14): pick the lane(s) + split compound questions ──
+# Reads the tenant's data catalog (Walid's Session-10 rule: domain-first) and
+# fills a small form: lane = text / numbers / both, plus a FOCUSED sub-question
+# per chosen leg. Splitting is the real fix the run-1/run-2 evidence demanded —
+# the one-shot numbers form coin-flips when the question carries a text half.
+# If the reply is unreadable we fall back to "both" (= the parallel design):
+# the router may only ever SAVE work, never lose an answer to a parse error.
+def make_router_node(menu: str, doc_list: str):
+    def router_node(notebook: Notebook) -> dict:
+        q = notebook["question"]
+        prompt = (
+            "You are the ROUTER for a business data assistant. Decide which "
+            "engine(s) can answer the user's question:\n"
+            '- "numbers": computed from the spreadsheet data below (sums, '
+            "averages, counts, rankings, lists of matching rows).\n"
+            '- "text": found by READING the text documents below (definitions, '
+            "explanations, remarks, policies — no computation).\n"
+            '- "both": needs an exact computed figure AND explanation/context '
+            "from the text.\n\n"
+            f"SPREADSHEET CATALOG:\n{menu}\n\n"
+            f"TEXT DOCUMENTS SEARCHABLE:\n{doc_list}\n"
+            "(The spreadsheets' free-text remark columns are searchable as "
+            "text too.)\n\n"
+            "Reply with ONLY a JSON object (no prose, no code fences):\n"
+            '{"lane": "text"|"numbers"|"both", '
+            '"numbers_question": "<a single plain question asking ONLY for the '
+            'figure/rows to compute — strip any explanation part>", '
+            '"text_question": "<what to look up in the text — strip any '
+            'computation part>"}\n'
+            "Include numbers_question when lane is numbers/both, text_question "
+            "when lane is text/both. If the question has two halves, each "
+            "sub-question carries ONLY its own half.\n\n"
+            f"QUESTION: {q}"
+        )
+        raw = ask(prompt, purpose="router").strip()
+        if raw.startswith("```"):
+            raw = raw.strip("`")
+            raw = raw[raw.find("{"): raw.rfind("}") + 1]
+        try:
+            plan = json.loads(raw)
+            lane = plan.get("lane")
+            if lane not in ("text", "numbers", "both"):
+                raise ValueError(f"bad lane {lane!r}")
+        except Exception:
+            plan, lane = {}, "both"    # safe fallback = run everything
+        return {
+            "lane": lane,
+            "text_question": str(plan.get("text_question") or q),
+            "numbers_question": str(plan.get("numbers_question") or q),
+        }
+
+    return router_node
+
+
 # ── Leg 1 + 2: TEXT (meaning + keyword, already fused inside HybridSearcher) ──
 def make_search_text_node(searcher: HybridSearcher, k: int = 5):
     def search_text_node(notebook: Notebook) -> dict:
-        hits = searcher.search(notebook["question"], k=k)
+        # The router may have written a focused sub-question; without a router
+        # (straight/parallel designs) we search the full question as before.
+        query = notebook.get("text_question") or notebook["question"]
+        hits = searcher.search(query, k=k)
         return {"text_hits": hits}
 
     return search_text_node
@@ -35,7 +94,9 @@ def make_answer_numbers_node(sql: SqlStore, company_id: str):
     menu = catalog_text(catalog)
 
     def answer_numbers_node(notebook: Notebook) -> dict:
-        plan = plan_query(notebook["question"], menu)
+        # Focused sub-question from the router when present, else the original.
+        question = notebook.get("numbers_question") or notebook["question"]
+        plan = plan_query(question, menu)
         result = run_plan(sql, catalog, plan)
         return {"number_result": result}
 
@@ -99,4 +160,4 @@ def llm_combine_node(notebook: Notebook) -> dict:
         f"PASSAGES:\n{evidence}"
         f"{numbers_block}"
     )
-    return {"answer": ask(prompt)}
+    return {"answer": ask(prompt, purpose="combine")}

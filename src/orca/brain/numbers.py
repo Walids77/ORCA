@@ -117,7 +117,7 @@ def plan_query(question: str, menu: str) -> dict:
         'data, reply with ONLY: {"needed": false}\n\n'
         f"CATALOG:\n{menu}\n\nQUESTION: {question}"
     )
-    raw = ask(prompt).strip()
+    raw = ask(prompt, purpose="numbers-form").strip()
     # Tolerate a model that wraps the JSON in ``` fences despite the instruction.
     if raw.startswith("```"):
         raw = raw.strip("`")

@@ -23,6 +23,7 @@ import json
 import logging
 import re
 import sqlite3
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -76,9 +77,22 @@ class SqlStore:
 
     def __init__(self, db_path: str | Path):
         self.db_path = str(db_path)
-        self._conn = sqlite3.connect(self.db_path)
-        self._conn.row_factory = sqlite3.Row
+        # One connection PER THREAD (Session 14): in the parallel brain the
+        # numbers leg runs on a LangGraph worker thread, and SQLite refuses to
+        # share one connection across threads. Each thread lazily opens its own
+        # connection to the same file — reads coexist fine; ingestion writes
+        # stay single-threaded as before.
+        self._local = threading.local()
         self._ensure_catalog()
+
+    @property
+    def _conn(self) -> sqlite3.Connection:
+        conn = getattr(self._local, "conn", None)
+        if conn is None:
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+            self._local.conn = conn
+        return conn
 
     # -- catalog: the metadata registry of what's been ingested ---------------
     def _ensure_catalog(self) -> None:
@@ -220,4 +234,8 @@ class SqlStore:
         return self.query("SELECT * FROM orca_catalog ORDER BY sheet")
 
     def close(self) -> None:
-        self._conn.close()
+        """Close THIS thread's connection (others close when their thread ends)."""
+        conn = getattr(self._local, "conn", None)
+        if conn is not None:
+            conn.close()
+            self._local.conn = None
