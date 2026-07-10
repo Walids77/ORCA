@@ -25,11 +25,12 @@ CLAUDE.md
 .claude/
 memory/
 
-# Session-13/14 artifacts holding REAL business data (client/supplier names, figures)
+# Session-13/14/15 artifacts holding REAL business data (client/supplier names, figures)
 # — local only until the neutral public demo corpus (roadmap item #2) exists
 eval/numbers_eval_2026-07-09.md
 eval/mixed_question_set_2026-07-10.md
 eval/mixed_*.md
+eval/planner_waves_2026-07-10.md
 brain_trips.html
 scripts/run_numbers_eval.py
 scripts/run_mixed_eval.py

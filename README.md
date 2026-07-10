@@ -10,16 +10,21 @@ and returns exact numbers, citations, and business explanations.
 
 ## Roadmap
 1. Local ingestion: a file → SQL rows + vectors + stored copy — **done ✅ (Excel · PDF prose · PDF number-tables→SQL)**
-2. Agent brain (orchestrator) on LangGraph — **in progress 🚧** — first branches live:
-   the two retrieval legs run **in parallel** (fan-out/fan-in), fronted by a **router**
-   that picks the lane (text / numbers / both) and splits compound questions into one
-   focused sub-question per leg. Every LLM call metered (tokens + cost per answer).
-   Next: the router becomes a planner (dependency chains — "best month → what was
-   bought THAT month"). Temporary LLM: Gemini, swapping to Claude/Bedrock.
-3. Heavy testing / eval harness in the terminal — retrieval **87.5%**; answer-level:
-   three brain designs raced on one 13-question mixed set (text · numbers ·
-   combined): **straight 9/13 → parallel 11/13 (−28% latency) → router 11/13 with
-   13/13 correct lane picks**; every eval recorded, keys verified against the source
+2. Agent brain (orchestrator) on LangGraph — **in progress 🚧** — the brain now
+   **plans**: a PLANNER writes a checklist (focused question · lane · waits-for),
+   and a plan-runner executes it in capped parallel **waves** through the retrieval
+   legs — dependency questions work ("which month was best → what did clients buy
+   THAT month" = two waves, the answer flows between them). The plan is validated
+   by code (real lanes, backward-only dependencies, step cap, safe fallback), and
+   the catalog the planner sees is filtered per user by code (permission-ready).
+   Every LLM call metered (tokens + cost per answer). Next: a caged CALCULATE
+   worker (exact arithmetic, never LLM math) + catalog descriptions. Temporary
+   LLM: Gemini, swapping to Claude/Bedrock.
+3. Heavy testing / eval harness in the terminal — retrieval **87.5%**; answer-level
+   designs raced on one fixed mixed question set: **straight 9/13 → parallel 11/13
+   (−28% latency) → router 11/13 (13/13 lane picks) → planner+waves 12/13, incl.
+   the first full pass on a dependency question**; every eval recorded with a
+   diagnosis trail, answer keys verified against the source file itself
 4. Local web frontend (login · upload · ask)
 5. AWS deployment (S3 · RDS + pgvector · Fargate · Cognito · Bedrock)
 

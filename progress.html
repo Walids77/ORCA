@@ -452,21 +452,27 @@
 <div class="card phase">
   <div class="letter l-now">B</div>
   <div class="body">
-    <h3>Build the brain — orchestrator on LangGraph <span class="badge b-now">ROUTER Jul 10</span></h3>
-    <p>Node by node: a router reads the question and picks a path — answer directly /
-    one simple lookup / decompose into sub-questions (2D model: parallel branches +
-    dependent steps) — then combines results into one answer with citations.
-    Built in from day one: conversation memory + tracing.
+    <h3>Build the brain — orchestrator on LangGraph <span class="badge b-now">PLANNER+WAVES Jul 10</span></h3>
+    <p>Node by node: the brain now <strong>PLANS</strong> — a planner reads the question and the
+    (permission-filtered) data catalog, writes a checklist (focused question · lane ·
+    waits-for), and a capped <strong>plan-runner</strong> executes it in parallel
+    <strong>waves</strong>: each lap runs every step whose dependencies are ready; answers
+    flow between waves. Walid's 2D model live: breadth = steps per wave · depth = waves.
     <strong>Built so far, each step eval-gated:</strong> the straight spine (Jul 9) →
-    <strong>parallel legs</strong> (fan-out/fan-in, −28% time) → the <strong>ROUTER</strong>
-    (picks text / numbers / both — 13/13 correct — and <em>splits</em> compound questions,
-    one focused sub-question per leg) → plus the <strong>token/cost meter</strong> in the
-    one-file LLM adapter (every call: tokens + $ per answer).
-    <strong>LLM = Gemini <code>gemini-2.5-flash</code> for now</strong> (behind that
-    adapter) → Claude via Bedrock once AWS unblocks it.
-    <strong>Next (Session 15): the router becomes a PLANNER</strong> — it writes a checklist
-    (question · lane · waits-for) and a capped plan-runner executes it in parallel waves =
-    the depth axis (best month → <em>that</em> month's purchases).</p>
+    <strong>parallel legs</strong> (−28% time) → the <strong>ROUTER</strong> (13/13 lane
+    picks, splits compound questions) → the <strong>PLANNER + WAVES, SHIPPED at 12/13</strong>
+    (beats the router's 11/13; the "best month → what did clients buy THAT month"
+    dependency question <em>passed in full for the first time</em>) → plus the
+    <strong>token/cost meter</strong> (every call: tokens + $ per answer) and the
+    <strong>RBAC catalog fence</strong> (our script decides what each user's planner may
+    even see — never the AI).
+    <strong>LLM = Gemini <code>gemini-2.5-flash</code> for now</strong> → Claude via
+    Bedrock once AWS unblocks it.
+    <strong>Next (Session 16): the caged CALCULATE worker</strong> (exact arithmetic —
+    average basket, % change, projections — by tested code, never AI math) +
+    <strong>catalog meanings</strong> (one line per sheet so "what was bought" maps to
+    client Sales, not company Expenses), then the <strong>hardening campaign</strong>:
+    many eval rounds, no lucky passes.</p>
   </div>
 </div>
 <div class="connector"></div>
@@ -511,6 +517,11 @@
 <h2>📓 Session log — click a session to read it</h2>
 
 <details class="session" open>
+  <summary>Jul 10 · Session 15 <span class="when">the router becomes a PLANNER — waves ship at 12/13; the February question finally answered</span></summary>
+  <p>The session the brain learned to <b>plan</b>. It opened with Walid's brainstorm (researched live, web + GitHub): should the router carry <b>RBAC</b> (role-based access control)? — verdict: yes in shape, but the AI is <i>never</i> the security gate — our script builds each user's catalog and the planner can only plan over what it's shown (fence 1, built today); the search legs get the same fence with the multi-user layer (fence 2). Bonus finding for the CV: the checklist-in-waves design Walid drew in Session 14 <b>is the published LLMCompiler pattern (ICML 2024)</b> — independently derived. Then the build: the router grew into a <b>PLANNER</b> that writes a checklist into the notebook — one row per step: focused question · lane · <b>waits-for</b> (a <code>{step 1}</code> placeholder carries an earlier answer into a later question) — and ONE <b>plan-runner</b> station with a capped loop executes it in parallel <b>waves</b>, every step going through the same proven legs. Our code cages the plan (max 8 steps · real lanes only · dependencies may only point backward · unreadable plan → yesterday's design as fallback). Then the part that earned the session its keep: <b>the eval fought back, five times</b> — and each failure got diagnosed to its exact cause and turned into a rule. The planner wrote engineer-speak step questions (rule: plan the WHAT, never the HOW); an injected timestamp made searches retrieve garbage (dates now travel as "February 2026 (2026-02)" — words for meaning, code for filters); the text lane can never month-filter this corpus (period questions now forced to the numbers lane); "what did clients buy" got <i>summed</i> instead of <i>listed</i> (WHAT-questions = LIST, incl. the remarks column; row cap 20→40, the Session-14 watch item come due); and an injected figure became a bogus SQL filter (dependencies now carry the label only). <b>Final score: 12/13 on the regression set — beats the router's 11/13 — and the question that failed every design in ORCA's history ("which month of 2026 was highest, and what did clients buy THAT month") passed IN FULL:</b> exact figure in wave 1, a real item list (Bulgari, Cartier Love/Ecrou/Just&nbsp;un&nbsp;clou, Messika, Chanel…) in wave 2. Plan shape was correct <b>15/15 in every run</b> — the failures all lived at the seams between workers, never in the map. Two fails stay, each with a named fix for Session 16: <b>arithmetic</b> (the planner wrote a <i>perfect</i> divide plan for the average basket — the caged CALCULATE worker just doesn't exist yet) and <b>catalog meanings</b> ("what was bought" went to company Expenses instead of client Sales — the catalog knows names, not meanings). New standing rule from Walid, written in stone: <b>no lucky passes</b> — an answer that's right by coin-flip counts for nothing; the 2D planner engine is ORCA's CPU, and the next phase is a hardening campaign of eval rounds on current, refined, and brand-new data. Also new: <code>docs/EXCEL_DATA_BEST_PRACTICES.md</code> — 12 spreadsheet rules, every one traced to a real failure ORCA's evals caught.</p>
+</details>
+
+<details class="session">
   <summary>Jul 10 · Session 14 <span class="when">parallel legs + router + token meter — three designs raced on one scoreboard</span></summary>
   <p>The session where the brain got its <b>first real branches</b> — and every design change had to <b>race the previous one on the same 13 questions</b>. First, a small tool with big consequences: the <b>token &amp; cost meter</b> (roadmap item #20) built into the one-file LLM adapter — every AI call now records its purpose, its tokens (taken from the provider's own usage report, never our guess) and its cost in dollars; its acceptance check proved the counts match the provider to the token, and taught us that a one-character answer can bill <b>43 "thinking" tokens</b> the model spends reasoning privately. Then the <b>mixed question set</b>: 13 questions of three shapes (5 text · 5 numbers · 3 <b>both-legs</b> — the never-before-graded type that IS ORCA's differentiator), every known answer verified against the <i>source file</i>, never the store (the Session-13 lesson). <b>Run 1, the old straight line: 9/13</b> — numbers perfect, but <b>both-legs 0/3</b>, and the diagnosis was gold: the one-shot numbers form <i>declines</i> compound questions ("highest month AND what did clients buy"), so no exact number ever reaches the answer-writer. <b>Run 2, parallel legs</b> (the two legs now leave the start together and meet at combine — the graph's first fan-out): <b>11/13, 28% faster</b> — though we recorded honestly that the both-legs improvement was an AI coin-flip, not the wiring (the smoke test also caught a real concurrency bug: the SQL store needed one connection per thread). <b>Run 3, the ROUTER</b>: a new first station that reads the data catalog, picks the lane — text / numbers / both, <b>13 of 13 picked right</b> — and, the real fix, <b>splits</b> a compound question into one focused sub-question per leg (the supplier question became "total laded cost for this supplier?" + "do the remarks mention problems?"): <b>11/13 in 5.7s</b>, with the first-ever graded both-legs pass — exact total, both supplier-credit remarks, every part cited. Honest verdict written in the record: the router ships on <b>determinism</b>, not cost (its own toll roughly eats what it saves today). And the question that failed all three runs — "highest month of 2026, and what did clients buy <i>that</i> month" — failed <b>by design</b>: its text half needs the number half's <i>answer</i> first. That's the <b>depth axis</b>, and it set next session's locked plan, which Walid designed himself in the closing discussion: <b>the router becomes a PLANNER</b> — it writes a checklist (focused question · lane · waits-for), and one capped <b>plan-runner</b> station executes it in parallel <b>waves</b> over the same proven legs, stretching the fixed map vertically or horizontally per question. Three eval cases are already waiting for it.</p>
 </details>

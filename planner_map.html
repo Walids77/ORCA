@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORCA — Session 15: Router → Planner + Waves</title>
+<style>
+  :root{
+    --built:#1e9e58; --built-bg:#e8f7ef;
+    --next:#e08a00;  --next-bg:#fdf3e3;
+    --cage:#b03030;  --cage-bg:#fdecec;
+    --ink:#1c2733; --soft:#5b6b7b; --line:#c9d4de; --card:#ffffff; --page:#f4f7fa;
+  }
+  body{font-family:"Segoe UI",system-ui,sans-serif;background:var(--page);color:var(--ink);
+       margin:0;padding:24px;line-height:1.45}
+  h1{font-size:1.35rem;margin:0 0 4px}
+  h2{font-size:1.05rem;margin:28px 0 10px;border-bottom:2px solid var(--line);padding-bottom:4px}
+  .sub{color:var(--soft);font-size:.85rem;margin-bottom:18px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;margin:10px 0 4px}
+  .chip{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:12px;height:12px;border-radius:3px;display:inline-block}
+  .row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+  .map{background:var(--card);border:1px solid var(--line);border-radius:12px;
+       padding:18px 20px;flex:1;min-width:320px}
+  .map h3{margin:0 0 12px;font-size:.95rem;color:var(--soft)}
+  .col{display:flex;flex-direction:column;align-items:center;gap:2px}
+  .node{border:2px solid var(--built);background:var(--built-bg);border-radius:10px;
+        padding:8px 16px;font-weight:600;font-size:.88rem;text-align:center;min-width:150px}
+  .node small{display:block;font-weight:400;color:var(--soft);font-size:.72rem;margin-top:2px}
+  .node.next{border-color:var(--next);background:var(--next-bg)}
+  .node.plain{border-color:var(--line);background:#fff}
+  .arrow{color:var(--soft);font-size:1.05rem;line-height:1;padding:1px 0}
+  .split{display:flex;gap:18px;justify-content:center}
+  .loop{border:2px dashed var(--next);border-radius:10px;padding:10px 14px;margin:4px 0;
+        display:flex;flex-direction:column;align-items:center;gap:2px;position:relative}
+  .loop .tag{position:absolute;top:-11px;right:10px;background:var(--next);color:#fff;
+             font-size:.68rem;padding:1px 8px;border-radius:8px}
+  .cagebox{border:2px solid var(--cage);background:var(--cage-bg);border-radius:10px;
+           padding:10px 14px;font-size:.8rem;max-width:280px}
+  .cagebox b{color:var(--cage)}
+  .cagebox ul{margin:6px 0 0;padding-left:18px}
+  .wave{background:var(--card);border:1px solid var(--line);border-radius:12px;
+        padding:14px 18px;margin-bottom:4px}
+  .wave .wlabel{font-size:.75rem;font-weight:700;color:var(--soft);letter-spacing:.06em;
+                text-transform:uppercase;margin-bottom:8px}
+  .steps{display:flex;gap:14px;flex-wrap:wrap}
+  .step{border:2px solid var(--built);background:var(--built-bg);border-radius:10px;
+        padding:8px 12px;font-size:.8rem;max-width:300px}
+  .step.text{border-color:#3a6fb8;background:#e9f1fb}
+  .step .lane{font-size:.68rem;font-weight:700;letter-spacing:.05em;color:var(--soft)}
+  .fill{color:var(--cage);font-weight:700}
+  .waitnote{text-align:center;color:var(--soft);font-size:.78rem;padding:6px 0}
+  .foot{color:var(--soft);font-size:.78rem;margin-top:26px;border-top:1px solid var(--line);padding-top:10px}
+  .rbac{border:2px solid #6a4fb8;background:#f0ecfa;border-radius:10px;padding:8px 12px;
+        font-size:.78rem;max-width:250px}
+  .rbac b{color:#6a4fb8}
+</style>
+</head>
+<body>
+
+<h1>Session 15 — the Router grows into a PLANNER 🗺️</h1>
+<div class="sub">Updated 2026-07-10 · Same fixed map, a dynamic checklist — time stretches with depth (waves), width with breadth (steps per wave).<br>
+<b>EVAL VERDICT: SHIPS — 12/13 on the regression set (router's bar was 11/13) · the February depth question passed IN FULL for the first time · plan shape 15/15 across all runs.</b></div>
+
+<div class="legend">
+  <span class="chip"><span class="dot" style="background:var(--built)"></span> built &amp; smoke-tested today (all of it — next: the eval)</span>
+  <span class="chip"><span class="dot" style="background:var(--cage)"></span> the cage — our code, no AI</span>
+  <span class="chip"><span class="dot" style="background:#6a4fb8"></span> RBAC fence — our code picks the catalog</span>
+</div>
+
+<h2>Before → After: the map</h2>
+<div class="row">
+  <div class="map">
+    <h3>SESSION 14 — router picks a lane</h3>
+    <div class="col">
+      <div class="node plain">START<small>the question arrives</small></div>
+      <div class="arrow">▼</div>
+      <div class="node">ROUTER<small>picks text / numbers / both<br>+ splits compound questions</small></div>
+      <div class="arrow">▼ ▼</div>
+      <div class="split">
+        <div class="node">TEXT leg<small>hybrid search</small></div>
+        <div class="node">NUMBERS leg<small>caged form → SQL</small></div>
+      </div>
+      <div class="arrow">▼ ▼</div>
+      <div class="node">COMBINE<small>answer, cited, guarded</small></div>
+      <div class="arrow">▼</div>
+      <div class="node plain">END</div>
+    </div>
+  </div>
+
+  <div class="map">
+    <h3>SESSION 15 — planner writes a CHECKLIST, runner executes it in WAVES</h3>
+    <div class="col">
+      <div class="node plain">START<small>the question arrives</small></div>
+      <div class="arrow">▼</div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <div class="rbac"><b>RBAC fence ✅</b><br>our script builds THIS user's
+        catalog first — the planner can only plan over files the user may see</div>
+        <div class="node">PLANNER ✅<small>writes the checklist:<br>focused question · lane · waits-for</small></div>
+      </div>
+      <div class="arrow">▼</div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <div class="node" style="border-color:var(--cage);background:var(--cage-bg)">PLAN CAGE ✅<small>our code validates every row<br>bad plan → Session-14 fallback</small></div>
+      </div>
+      <div class="arrow">▼</div>
+      <div class="loop">
+        <span class="tag">capped loop — one lap = one wave</span>
+        <div class="node">PLAN-RUNNER ✅<small>runs every step whose<br>dependencies are ready — in parallel,<br>through the SAME two legs</small></div>
+        <div class="arrow" style="color:var(--next)">↻ more steps waiting? run the next wave<br>(answers fill the {step N} placeholders)</div>
+      </div>
+      <div class="arrow">▼ all steps done</div>
+      <div class="node">COMBINE<small>answer, cited, guarded</small></div>
+      <div class="arrow">▼</div>
+      <div class="node plain">END</div>
+    </div>
+  </div>
+</div>
+
+<h2>The cage rules (our code, never the LLM)</h2>
+<div class="row">
+  <div class="cagebox"><b>Every plan must pass:</b>
+    <ul>
+      <li>1 to 8 steps, never more</li>
+      <li>lane must be a REAL engine (numbers / text)</li>
+      <li>waits-for may only point to an EARLIER step</li>
+      <li>unreadable reply → fallback = both lanes, one wave (a bad plan can never do worse than no plan)</li>
+      <li>step questions in PLAIN BUSINESS LANGUAGE — the planner decides WHAT each step asks, never HOW (no sheet/column/filter names; each engine picks those from its own catalog). Lesson found in today's smoke test: pseudo-SQL wording steered both engines wrong.</li>
+    </ul>
+  </div>
+  <div class="cagebox" style="border-color:#6a4fb8;background:#f0ecfa"><b style="color:#6a4fb8">Two RBAC fences:</b>
+    <ul>
+      <li><b style="color:#6a4fb8">Fence 1 ✅ (built):</b> the catalog handed to the planner is pre-filtered per user by our script</li>
+      <li><b style="color:#6a4fb8">Fence 2 (with multi-user later):</b> the legs themselves filter at retrieval — a poisoned plan hits a locked door</li>
+    </ul>
+  </div>
+</div>
+
+<h2>Worked example — today's REAL smoke test: the February question</h2>
+<div class="sub">"Which month of 2026 had the highest sales, and what did clients buy that month?" — failed all 3 designs in Session 14 <em>by design</em>. Here is the actual plan the planner wrote today:</div>
+
+<div class="wave">
+  <div class="wlabel">Wave 1 — no dependencies, runs immediately</div>
+  <div class="steps">
+    <div class="step"><span class="lane">STEP 1 · NUMBERS</span><br>
+      Which month and year from the 'Summary' sheet had the highest 'Sales' in 2026?</div>
+  </div>
+</div>
+<div class="waitnote">▼ step 1's answer (e.g. <span class="fill">February 2026</span>) is written into the notebook and fills the waiting steps ▼</div>
+<div class="wave">
+  <div class="wlabel">Wave 2 — both waited for step 1 → now run IN PARALLEL</div>
+  <div class="steps">
+    <div class="step"><span class="lane">STEP 2 · NUMBERS · waits for 1</span><br>
+      List the 'Remarks' from the 'Sales' sheet for <span class="fill">← step 1's month</span></div>
+    <div class="step"><span class="lane">STEP 3 · NUMBERS · waits for 1</span><br>
+      List the 'Remark' from 'Client Deposits Credit' for <span class="fill">← step 1's month</span></div>
+  </div>
+</div>
+<div class="waitnote">▼ nothing left waiting → COMBINE writes one answer from all three results</div>
+
+<div class="foot">
+  Depth = number of waves (time) · Breadth = steps per wave (parallel work) · Cost = total steps.<br>
+  Same pattern as the published LLMCompiler design (ICML 2024) — independently derived by Walid.
+  Parked for later sessions: the simulation level (user assumptions + calculate) and the
+  conditional / re-planner level (the plan rewrites itself mid-flight) — the 3rd dimension.
+</div>
+
+</body>
+</html>

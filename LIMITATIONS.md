@@ -15,32 +15,41 @@
 
 ## The brain
 
-- **Dependency (depth) questions aren't answerable yet.** "Which month had the
-  highest sales, and what did clients buy THAT month?" fails: the text half needs
-  the number half's ANSWER before it can search, and today's router only picks
-  lanes — it can't chain steps. Failed all 3 designs in the Session-14 eval, by
-  design. *Fix path (Session 15, locked):* router→planner (a checklist with
-  waits-for dependencies) + a capped plan-runner executing it in waves.
+- **No arithmetic.** ORCA retrieves and aggregates (SUM/AVG/COUNT...) but cannot
+  COMPUTE across results: "average basket = total sales ÷ total invoices" wrote a
+  perfect 3-step plan in the Session-15 eval — and stopped at the divide, because
+  no divide engine exists (and LLM mental math is banned by design). *Fix path
+  (Session 16, locked):* the caged CALCULATE worker — a whitelist of tested math
+  functions the plan can call; our code does the math, never the LLM.
 
-- **Compound questions depend on the router.** Without the router, the one-shot
-  numbers form coin-flips on questions that mix a figure with an explanation
-  (engaged in one eval run, declined in another). The router's question-splitting
-  fixes this deterministically — so the router lane is now the production path.
+- **The catalog knows sheet NAMES, not MEANINGS.** "What was bought in December?"
+  was answered from the Expenses sheet (company spending) instead of the Sales
+  remarks (client purchases) — ambiguous business words map to the wrong table
+  with full confidence. *Fix path (Session 16, locked):* a one-line plain-English
+  meaning per sheet in the catalog (the Session-11 design; pairs with agreed
+  benchmarks later).
+
+- **Plans are 2D only (no branching plans).** The planner writes the whole
+  checklist upfront; a question whose NEXT step depends on an intermediate answer
+  ("if growth is under 10%, investigate X; otherwise Y") can't be planned yet.
+  *Fix path (parked, recorded):* the conditional / re-planner level — the plan
+  revises itself between waves.
 
 - **No conversation memory yet** — each question stands alone; "and compare it to
   last year?" is meaningless. *Fix path:* LangGraph checkpointing (brief #16).
 
 ## Retrieval
 
-- **Whole-corpus search can crowd out a niche document's chunk.** The survey's
-  "primary bottleneck" question passed when search was pinned to the survey
-  (Session 12) but fails consistently on the whole tenant corpus (Session 14) —
-  the Excel's row-chunks compete for the top-5 spots. *Fix path:* retrieval
-  precision (raise k / a reranker once Bedrock unblocks), eval-graded.
+- **One fragile fact can flip with question phrasing.** The survey's "primary
+  bottleneck" answer passes under some sub-question wordings and fails under
+  others in the SAME code (Session-15: passed as a direct question, failed
+  inside the cross-corpus compound question) — whole-corpus top-5 crowding.
+  *Fix path:* retrieval precision (raise k / a reranker once Bedrock unblocks),
+  eval-graded; stability testing (repeated runs) per the no-lucky-passes rule.
 
-- **LIST answers cap at 20 rows.** A month-detail request ("everything sold in
-  February" — ~37 rows) would truncate. *Fix path:* raise the cap or aggregate,
-  when the depth branch makes LIST the month-detail engine (Session 15 eval).
+- **LIST answers cap at 40 rows** (raised from 20 in Session 15 when LIST became
+  the month-detail engine). A period holding more rows than the cap would
+  truncate silently. *Fix path:* aggregate or paginate when a real case hits it.
 
 ## Cost / scale
 

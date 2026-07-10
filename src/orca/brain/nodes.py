@@ -89,8 +89,11 @@ def make_search_text_node(searcher: HybridSearcher, k: int = 5):
 # (see numbers.py): the LLM fills a structured form (which sheet / operation /
 # column / filters) — MOVE 1 — and our validated code builds + runs the SQL
 # itself — MOVE 2. The LLM never writes SQL.
-def make_answer_numbers_node(sql: SqlStore, company_id: str):
-    catalog = load_catalog(sql, company_id)
+def make_answer_numbers_node(sql: SqlStore, company_id: str,
+                             allowed_files: set[str] | None = None):
+    # allowed_files = the RBAC fence: the planner's menu only ever contains
+    # sheets from files this user may see (None = everything, today's default).
+    catalog = load_catalog(sql, company_id, allowed_files)
     menu = catalog_text(catalog)
 
     def answer_numbers_node(notebook: Notebook) -> dict:
@@ -153,6 +156,53 @@ def llm_combine_node(notebook: Notebook) -> dict:
         "ONLY the passages and the EXACT NUMBERS block below. If the answer is "
         "in neither, reply exactly: "
         "\"I can't answer that from the uploaded documents.\" "
+        "Never compute or estimate figures yourself — only repeat figures from "
+        "the EXACT NUMBERS block. Cite the passage numbers you used, like [1] "
+        "or [2], and cite computed figures as [numbers].\n\n"
+        f"QUESTION: {notebook['question']}\n\n"
+        f"PASSAGES:\n{evidence}"
+        f"{numbers_block}"
+    )
+    return {"answer": ask(prompt, purpose="combine")}
+
+
+# ── COMBINE for the PLANNER design (Session 15) ──
+# Same rules, different evidence shape: the plan-runner leaves one result per
+# checklist step in the notebook. Text-step passages get one global numbering
+# (for [1]-style citations); each numbers step contributes its own computed
+# block, labelled with the step's focused question so the answer-writer knows
+# which figure answers which part.
+def plan_combine_node(notebook: Notebook) -> dict:
+    passages, numbers_blocks = [], []
+    for n in sorted(notebook.get("step_results", {})):
+        res = notebook["step_results"][n]
+        if res.get("lane") == "text":
+            for h in res.get("hits", []):
+                meta = h.get("metadata", {})
+                where = f"page {meta.get('page')}, section {meta.get('section', '?')}"
+                passages.append(f"[{len(passages) + 1}] ({where})\n{h.get('text', '')}")
+        else:
+            block = result_text(res.get("result", {}))
+            if block:
+                numbers_blocks.append(f"(step {n}: {res.get('question', '')})\n{block}")
+
+    evidence = "\n\n".join(passages) if passages else "(no passages retrieved)"
+    numbers_block = (
+        "\n\nEXACT NUMBERS (computed directly from the company's spreadsheet "
+        "data by database queries — use these figures VERBATIM, cite as "
+        "[numbers]):\n" + "\n\n".join(numbers_blocks) if numbers_blocks else ""
+    )
+    # Session-15 eval lesson: on multi-part questions the all-or-nothing rule
+    # made the combine refuse EVERYTHING when one part was missing — so this
+    # combine must answer the parts it has and name the part it can't.
+    prompt = (
+        "You are ORCA, a business document assistant. Answer the question using "
+        "ONLY the passages and the EXACT NUMBERS block below. If NONE of it "
+        "answers the question, reply exactly: "
+        "\"I can't answer that from the uploaded documents.\" "
+        "If the evidence answers only PART of a multi-part question, answer "
+        "that part fully and state plainly which part the uploaded documents "
+        "cannot answer — never refuse everything when a part is answerable. "
         "Never compute or estimate figures yourself — only repeat figures from "
         "the EXACT NUMBERS block. Cite the passage numbers you used, like [1] "
         "or [2], and cite computed figures as [numbers].\n\n"

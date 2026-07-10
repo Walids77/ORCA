@@ -2,6 +2,41 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-10 — Session 15: the router becomes a PLANNER + plan-runner in parallel waves — SHIPS at 12/13
+- **Morning research (Walid's brainstorm):** RBAC-in-the-router, catalog scaling, branch-
+  selection best practice, the "3rd dimension", music embeddings — web + GitHub checked.
+  Headline finding: Walid's checklist-with-waves design IS the published **LLMCompiler**
+  pattern (ICML 2024) — independently derived.
+- **RBAC fence (shape 1):** the catalog builders now take an allowed-files input — OUR
+  script filters what the planner may even see, per user, before any prompt exists; the
+  LLM never picks its own catalog. Fence 2 (filtering inside the search legs) lands with
+  the multi-user layer.
+- **PLANNER:** the router now writes a checklist into the notebook — focused question ·
+  lane · waits-for (`{step N}` placeholders carry dependencies). Caged by our code:
+  1–8 steps, real lanes, dependencies only point backward, unreadable → both-lanes fallback.
+- **PLAN-RUNNER:** one station with a capped loop-back edge; each lap runs every ready
+  step IN PARALLEL through the same proven legs (waves); placeholders filled between waves.
+- **Eval (13-question regression set + 2 new depth cases; keys re-verified vs the source):
+  FINAL 12/13 — beats the router's 11/13. The February depth question (highest month →
+  what clients bought THAT month) passed IN FULL for the first time ever.** Plan shape
+  15/15 in every run; both traps refused; flat questions ~$0.002–0.005, depth ~$0.01–0.02.
+- **Five diagnosis loops, all recorded:** plain-business-language steps (the planner
+  decides WHAT, never HOW) · dates rendered both ways ("February 2026 (2026-02)") ·
+  period-filtered steps must take the numbers lane (the text corpus contains no month
+  words, only ISO dates) · "WHAT was bought" = LIST incl. remarks (cap 20→40) ·
+  dependency labels only, never figures (an injected figure became a bogus SQL filter).
+  Meta-lesson: multi-agent failures are mostly HANDOFF failures between steps.
+- **Known fails with named levers (Session 16):** arithmetic (the perfect 3-step divide
+  plan exists — the caged CALCULATE worker doesn't yet) · catalog MEANINGS (one-line
+  description per sheet, so "what was bought" maps to client Sales, not company Expenses).
+- **New public doc:** `docs/EXCEL_DATA_BEST_PRACTICES.md` — 12 data-entry/layout rules,
+  each traced to a real eval-caught failure.
+- **Standing rule (Walid): no lucky passes** — a pass that doesn't reproduce counts for
+  nothing; evals must verify stability. The 2D planner+waves engine = ORCA's CPU: harden
+  it with many eval rounds (current data → refined data → new datasets, incl. finance).
+- Parked, recorded: simulation level (user assumptions on the calculate worker) ·
+  conditional/re-planner ("3rd dimension") · scaling bucket (catalog-search, ~100 users).
+
 ## 2026-07-10 — Session 14: parallel legs + router + token meter — three designs eval'd head-to-head
 - **Token/cost meter built (roadmap item #20)** into the one-file LLM adapter: every call
   records purpose · tokens in/out **from the provider's own usage report** · cost at the

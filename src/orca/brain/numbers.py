@@ -37,17 +37,28 @@ _FILTER_OPS = {
     "contains": "LIKE ?",          # value gets wrapped in %...% below
 }
 _MAX_GROUP_ROWS = 10               # top-N cap when grouping (keeps answers short)
-_MAX_LIST_ROWS = 20                # row cap for LIST answers (never dump a sheet)
+# Raised 20 -> 40 in Session 15: the depth branch made LIST the month-detail
+# engine (a busy month holds ~37 sales rows) — the Session-14 watch item.
+_MAX_LIST_ROWS = 40                # row cap for LIST answers (never dump a sheet)
 
 
 # ── the catalog the planner sees ─────────────────────────────────────────────
-def load_catalog(sql: SqlStore, company_id: str) -> list[dict]:
-    """One entry per stored sheet: names, columns + types, and a sample row."""
+def load_catalog(sql: SqlStore, company_id: str,
+                 allowed_files: set[str] | None = None) -> list[dict]:
+    """One entry per stored sheet: names, columns + types, and a sample row.
+
+    allowed_files = the RBAC fence (Session 15): OUR code decides which files
+    this user's catalog may contain, BEFORE any LLM sees it. None = no
+    restriction (single-user today); the multi-user layer later passes the
+    per-role set here — a data change, not a redesign.
+    """
     entries = []
     for row in sql.query(
         "SELECT file_id, sheet, table_name, columns, row_count FROM orca_catalog "
         "WHERE company_id = ?", (company_id,),
     ):
+        if allowed_files is not None and row["file_id"] not in allowed_files:
+            continue
         col_map = json.loads(row["columns"])           # original name -> safe SQL name
         # Column types come from the table itself (REAL = number, TEXT = text/date).
         types = {c["name"]: c["type"] for c in sql.query(f'PRAGMA table_info("{row["table_name"]}")')}
@@ -110,6 +121,9 @@ def plan_query(question: str, menu: str) -> dict:
         "SUM (or COUNT) on the measure.\n"
         "- For \"show me / list the rows that ...\" questions, use operation LIST "
         "with filters, and name the useful columns in \"columns\".\n"
+        "- Questions asking WHAT was bought/sold/mentioned (not how much) are "
+        "LIST questions — use LIST and include the remark/description column "
+        "in \"columns\": the remarks describe the items.\n"
         "- If the catalog has NO column holding what the question asks about (e.g. "
         "it asks per client but no sheet has a client-name column), reply "
         '{"needed": false} rather than guessing a wrong column.\n'

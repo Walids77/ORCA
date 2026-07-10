@@ -20,6 +20,17 @@ class Notebook(TypedDict, total=False):
     text_question: str
     numbers_question: str
 
+    # the PLANNER (Session 15) writes this: the validated checklist — one row
+    # per step: {"n": 1, "question": ..., "lane": "numbers"|"text",
+    # "waits_for": [earlier step numbers]}. A {step N} placeholder inside a
+    # question is filled with step N's answer between waves.
+    plan: list[dict]
+
+    # the PLAN-RUNNER writes these as the waves execute: each step's result
+    # (keyed by step number) and how many waves it took.
+    step_results: dict
+    waves_run: int
+
     # the TEXT leg (meaning + keyword search, already fused by HybridSearcher)
     # writes this: a list of retrieved chunks, each = {id, text, metadata, ...}
     text_hits: list[dict]

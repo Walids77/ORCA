@@ -35,8 +35,11 @@ from orca.brain.nodes import (
     make_search_text_node,
     make_answer_numbers_node,
     llm_combine_node,
+    plan_combine_node,
 )
 from orca.brain.numbers import load_catalog, catalog_text
+from orca.brain.planner import make_planner_node
+from orca.brain.runner import make_plan_runner_node, more_waves
 from orca.stores.vector_store import VectorStore
 from orca.stores.hybrid import HybridSearcher
 from orca.stores.sql_store import SqlStore
@@ -50,6 +53,7 @@ def build_brain(
     company_id: str = "demo",
     text_file_id: str | None = None,
     design: str = "parallel",
+    allowed_files: set[str] | None = None,
 ):
     """Build the brain over the real stores, in the requested wiring.
 
@@ -62,6 +66,12 @@ def build_brain(
     the tenant's documents (survey PDF + the Excel's row-chunks together). Facts
     living in free text — like client names inside a sales remark — are only
     findable this way. Pass a file_id to narrow to one document (the evals do).
+
+    Session 15: allowed_files = the RBAC fence. When set, both catalogs the
+    router/planner LLM ever sees (spreadsheet menu + text-doc list) are filtered
+    to these files by OUR code before any prompt is built — the LLM never picks
+    its own catalog. None = no restriction (single-user today); the multi-user
+    layer later computes this set per role at login.
     """
     # Real engines (MiniLM embedder is built inside VectorStore by default).
     vector = VectorStore(path=CHROMA_PATH)
@@ -69,8 +79,39 @@ def build_brain(
     sql = SqlStore(SQL_PATH)
 
     road_map = StateGraph(Notebook)
+
+    if design == "planner":
+        # Session 15: START -> planner -> plan-runner (capped loop, one lap =
+        # one WAVE of parallel steps) -> combine. The planner writes the
+        # checklist; the runner executes it through the same proven legs. This
+        # design has its own stations, so it draws its own map and returns.
+        menu_catalog = load_catalog(sql, company_id, allowed_files)
+        menu = catalog_text(menu_catalog)
+        doc_titles = sorted({
+            (c.get("metadata") or {}).get("doc_title")
+            for c in text_searcher.chunks
+            if (c.get("metadata") or {}).get("doc_title")
+            and (allowed_files is None
+                 or (c.get("metadata") or {}).get("file_id") in allowed_files)
+        })
+        doc_list = "\n".join(f"- {t}" for t in doc_titles) or "- (uploaded documents)"
+        road_map.add_node("planner", make_planner_node(menu, doc_list))
+        road_map.add_node("run_wave",
+                          make_plan_runner_node(text_searcher, sql,
+                                                menu_catalog, menu))
+        # The planner-design combine reads the whole checklist's results.
+        road_map.add_node("combine", plan_combine_node)
+        road_map.add_edge(START, "planner")
+        road_map.add_edge("planner", "run_wave")
+        road_map.add_conditional_edges(
+            "run_wave", more_waves, {"again": "run_wave", "done": "combine"}
+        )
+        road_map.add_edge("combine", END)
+        return road_map.compile()
+
     road_map.add_node("search_text", make_search_text_node(text_searcher))
-    road_map.add_node("answer_numbers", make_answer_numbers_node(sql, company_id))
+    road_map.add_node("answer_numbers",
+                      make_answer_numbers_node(sql, company_id, allowed_files))
     road_map.add_node("combine", llm_combine_node)
 
     if design == "straight":
@@ -82,11 +123,14 @@ def build_brain(
         # Router first (domain-first, reads both catalogs), then a conditional
         # junction: only the picked lane(s) run. Chosen legs still run in
         # parallel when the lane is "both".
-        menu = catalog_text(load_catalog(sql, company_id))
+        menu = catalog_text(load_catalog(sql, company_id, allowed_files))
+        # Same RBAC fence on the text-document list the router sees.
         doc_titles = sorted({
             (c.get("metadata") or {}).get("doc_title")
             for c in text_searcher.chunks
             if (c.get("metadata") or {}).get("doc_title")
+            and (allowed_files is None
+                 or (c.get("metadata") or {}).get("file_id") in allowed_files)
         })
         doc_list = "\n".join(f"- {t}" for t in doc_titles) or "- (uploaded documents)"
         road_map.add_node("router", make_router_node(menu, doc_list))
