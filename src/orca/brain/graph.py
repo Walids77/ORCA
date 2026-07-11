@@ -52,15 +52,17 @@ SQL_PATH = "data/stores/orca.db"
 def build_brain(
     company_id: str = "demo",
     text_file_id: str | None = None,
-    design: str = "parallel",
+    design: str = "planner",  # Session 16: the planner+waves CPU is now the default
     allowed_files: set[str] | None = None,
 ):
     """Build the brain over the real stores, in the requested wiring.
 
-    design="parallel" (default): both legs fan out from START and combine
-    fans them back in — same stations, same accuracy, less waiting.
-    design="straight": the Sessions-12/13 sequential wiring, kept selectable
-    so the eval comparison stays reproducible.
+    design="planner" (DEFAULT since Session 16): the eval-winning CPU —
+    planner writes a checklist, the plan-runner executes it in parallel waves.
+    design="parallel": both legs fan out from START and combine fans them
+    back in — same stations, same accuracy, less waiting.
+    design="straight": the Sessions-12/13 sequential wiring. Older designs
+    stay selectable so historical eval comparisons stay reproducible.
 
     Session 13: text_file_id now defaults to None = the text leg searches ALL of
     the tenant's documents (survey PDF + the Excel's row-chunks together). Facts

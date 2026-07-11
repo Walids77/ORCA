@@ -19,12 +19,13 @@ import logging
 import re
 
 from orca.brain.llm import ask
+from orca.brain.calculate import FUNCTIONS
 from orca.brain.state import Notebook
 
 logger = logging.getLogger(__name__)
 
 MAX_STEPS = 8                                  # the cage's hard ceiling
-LANES = {"numbers", "text"}                    # the only engines that exist
+LANES = {"numbers", "text", "calculate"}       # the only engines that exist
 _PLACEHOLDER = re.compile(r"\{step (\d+)\}")   # how a question carries a dependency
 
 
@@ -57,10 +58,25 @@ def validate_plan(raw: object) -> list[dict] | None:
         # the planner forgot to list it.
         for m in _PLACEHOLDER.finditer(question):
             waits.add(int(m.group(1)))
+        step = {"n": i, "question": question, "lane": lane}
+        if lane == "calculate":
+            # Session 16 cage: the function must be whitelisted, and every
+            # {step N} input is a dependency exactly like a placeholder.
+            function = str(s.get("function") or "").strip().lower()
+            if function not in FUNCTIONS:
+                return None
+            inputs = s.get("inputs")
+            if not isinstance(inputs, list) or not inputs:
+                return None
+            for inp in inputs:
+                for m in _PLACEHOLDER.finditer(str(inp)):
+                    waits.add(int(m.group(1)))
+            step["function"] = function
+            step["inputs"] = inputs
         if any(w < 1 or w >= i for w in waits):   # only EARLIER steps allowed
             return None
-        steps.append({"n": i, "question": question, "lane": lane,
-                      "waits_for": sorted(waits)})
+        step["waits_for"] = sorted(waits)
+        steps.append(step)
     return steps
 
 
@@ -89,7 +105,13 @@ def make_planner_node(menu: str, doc_list: str):
             "from the spreadsheet data below (sum, average, count, min/max, "
             "ranking, list).\n"
             '- "text": finds passages by READING the text documents below '
-            "(definitions, explanations, remarks, policies — no computation).\n\n"
+            "(definitions, explanations, remarks, policies — no computation).\n"
+            '- "calculate": ONE exact math operation on numbers from EARLIER '
+            "steps. Functions (the only ones that exist):\n"
+            "    divide(a, b) — a ÷ b (ratios, averages like total ÷ count)\n"
+            "    difference(a, b) — a − b\n"
+            "    percent_change(old, new) — growth from old to new, in %\n"
+            "    projection(base, percent) — base grown by percent (10 = +10%)\n\n"
             f"SPREADSHEET CATALOG:\n{menu}\n\n"
             f"TEXT DOCUMENTS SEARCHABLE:\n{doc_list}\n"
             "(The spreadsheets' free-text remark columns are searchable as "
@@ -111,6 +133,15 @@ def make_planner_node(menu: str, doc_list: str):
             '{step 1}?" with "waits_for": [1].\n'
             "- Each step's question must be plain and focused — one "
             "figure/lookup per step.\n"
+            "- A ratio/average-per/growth/projection question that the data "
+            "does not hold as a ready column = numbers steps for each raw "
+            "figure, then ONE calculate step. The calculate step adds "
+            '"function" and "inputs": each input is a {step N} placeholder '
+            "or a plain number given in the question (like an assumed "
+            "percent). Example: average basket = step 1 total sales "
+            "(numbers), step 2 invoice count (numbers), step 3 lane "
+            '"calculate", "function": "divide", "inputs": ["{step 1}", '
+            '"{step 2}"], "waits_for": [1, 2].\n'
             "- Write each step's question in PLAIN BUSINESS LANGUAGE, the way "
             "a manager would ask it (e.g. \"What is supplier Acme's total?\"). NEVER "
             "name sheets, columns, operations or filters in it — each engine "
@@ -119,8 +150,10 @@ def make_planner_node(menu: str, doc_list: str):
             f"- Never more than {MAX_STEPS} steps.\n\n"
             "Reply with ONLY a JSON object (no prose, no code fences):\n"
             '{"steps": [{"question": "<focused question>", '
-            '"lane": "numbers"|"text", '
-            '"waits_for": [<earlier step numbers, or empty>]}]}\n\n'
+            '"lane": "numbers"|"text"|"calculate", '
+            '"waits_for": [<earlier step numbers, or empty>], '
+            '"function": "<calculate steps only>", '
+            '"inputs": [<calculate steps only>]}]}\n\n'
             f"QUESTION: {q}"
         )
         raw = ask(prompt, purpose="planner").strip()

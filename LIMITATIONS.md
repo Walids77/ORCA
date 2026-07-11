@@ -15,19 +15,12 @@
 
 ## The brain
 
-- **No arithmetic.** ORCA retrieves and aggregates (SUM/AVG/COUNT...) but cannot
-  COMPUTE across results: "average basket = total sales ÷ total invoices" wrote a
-  perfect 3-step plan in the Session-15 eval — and stopped at the divide, because
-  no divide engine exists (and LLM mental math is banned by design). *Fix path
-  (Session 16, locked):* the caged CALCULATE worker — a whitelist of tested math
-  functions the plan can call; our code does the math, never the LLM.
-
-- **The catalog knows sheet NAMES, not MEANINGS.** "What was bought in December?"
-  was answered from the Expenses sheet (company spending) instead of the Sales
-  remarks (client purchases) — ambiguous business words map to the wrong table
-  with full confidence. *Fix path (Session 16, locked):* a one-line plain-English
-  meaning per sheet in the catalog (the Session-11 design; pairs with agreed
-  benchmarks later).
+- **The numbers FORM is nondeterministic on rare runs.** The plan layer is solid
+  (60/60 correct plans in the Session-16 eval, zero cage violations), but the
+  form-filling call occasionally wobbles: once it chose SUM instead of COUNT for
+  "how many orders", and item-LIST steps occasionally return empty. *Fix path
+  (Session 17):* tighten the form prompt on count/list intent, retry once on an
+  empty list step, and/or lower that call's temperature — eval-graded.
 
 - **Plans are 2D only (no branching plans).** The planner writes the whole
   checklist upfront; a question whose NEXT step depends on an intermediate answer

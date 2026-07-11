@@ -10,21 +10,28 @@ and returns exact numbers, citations, and business explanations.
 
 ## Roadmap
 1. Local ingestion: a file → SQL rows + vectors + stored copy — **done ✅ (Excel · PDF prose · PDF number-tables→SQL)**
-2. Agent brain (orchestrator) on LangGraph — **in progress 🚧** — the brain now
+2. Agent brain (orchestrator) on LangGraph — **in progress 🚧** — the brain
    **plans**: a PLANNER writes a checklist (focused question · lane · waits-for),
    and a plan-runner executes it in capped parallel **waves** through the retrieval
    legs — dependency questions work ("which month was best → what did clients buy
-   THAT month" = two waves, the answer flows between them). The plan is validated
-   by code (real lanes, backward-only dependencies, step cap, safe fallback), and
-   the catalog the planner sees is filtered per user by code (permission-ready).
-   Every LLM call metered (tokens + cost per answer). Next: a caged CALCULATE
-   worker (exact arithmetic, never LLM math) + catalog descriptions. Temporary
-   LLM: Gemini, swapping to Claude/Bedrock.
+   THAT month" = two waves, the answer flows between them). Three lanes: text
+   retrieval · caged SQL (the LLM fills a form, code runs the query) · a caged
+   **CALCULATE** worker (the LLM picks a whitelisted math function + which step
+   answers feed it; code does the arithmetic — never LLM math). The plan is
+   validated by code (real lanes, backward-only dependencies, step cap, safe
+   fallback); the catalog carries a plain-English **meaning per sheet** so
+   ambiguous business words map to the right table, and is filtered per user by
+   code (permission-ready). Every LLM call metered (tokens + cost per answer).
+   Temporary LLM: Gemini, swapping to Claude/Bedrock.
 3. Heavy testing / eval harness in the terminal — retrieval **87.5%**; answer-level
    designs raced on one fixed mixed question set: **straight 9/13 → parallel 11/13
    (−28% latency) → router 11/13 (13/13 lane picks) → planner+waves 12/13, incl.
-   the first full pass on a dependency question**; every eval recorded with a
-   diagnosis trail, answer keys verified against the source file itself
+   the first full pass on a dependency question → after the calculate lane +
+   catalog meanings + a data-cleaning round on the source workbook: floor 11/15,
+   best run 15/15** (repeated runs — an unreproducible pass counts for nothing);
+   every eval recorded with a diagnosis trail, answer keys verified against the
+   source file itself. Re-uploading a changed file first purges ALL its stored
+   traces (SQL + vectors), then stores a clean copy.
 4. Local web frontend (login · upload · ask)
 5. AWS deployment (S3 · RDS + pgvector · Fargate · Cognito · Bedrock)
 

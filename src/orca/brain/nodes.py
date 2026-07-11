@@ -13,6 +13,7 @@ import json
 
 from orca.brain.state import Notebook
 from orca.brain.llm import ask
+from orca.brain.calculate import calc_result_text
 from orca.brain.numbers import load_catalog, catalog_text, plan_query, run_plan, result_text
 from orca.stores.hybrid import HybridSearcher
 from orca.stores.sql_store import SqlStore
@@ -182,7 +183,9 @@ def plan_combine_node(notebook: Notebook) -> dict:
                 where = f"page {meta.get('page')}, section {meta.get('section', '?')}"
                 passages.append(f"[{len(passages) + 1}] ({where})\n{h.get('text', '')}")
         else:
-            block = result_text(res.get("result", {}))
+            # calculate results have their own renderer (no sheet/filter fields)
+            render = calc_result_text if res.get("lane") == "calculate" else result_text
+            block = render(res.get("result", {}))
             if block:
                 numbers_blocks.append(f"(step {n}: {res.get('question', '')})\n{block}")
 

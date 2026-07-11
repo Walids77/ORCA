@@ -1,0 +1,230 @@
+ORCA Observations - Agentic RAG / Brain CPU Review
+
+Purpose
+This file captures the codebase review plus online research findings so Claude Code can read them and decide what to implement next.
+
+
+Short Verdict
+ORCA's architecture is elite-grade in direction, but the product is still prototype-grade until the hardening layer lands.
+
+The strongest idea is the "planner + waves" CPU:
+- The LLM writes a structured plan.
+- Code validates the plan.
+- Independent steps run in parallel.
+- Dependent steps wait for earlier answers.
+- Retrieval and SQL are executed by trusted code, not by LLM-written SQL.
+- The final answer is written only from evidence blocks.
+
+This maps closely to the LLMCompiler pattern: a planner creates dependent tasks, a dispatcher/executor runs ready tasks in parallel, and later tasks are unblocked by earlier outputs.
+
+
+What ORCA Already Does Well
+1. Fixed graph, dynamic plan
+   The LangGraph map stays fixed while the planner writes the runtime checklist. This is the right shape for controllable agentic workflows.
+
+2. Real 2D decomposition
+   Breadth = ready independent steps run in the same wave.
+   Depth = later steps wait for earlier step outputs.
+   This is stronger than basic "run text and numbers together" RAG.
+
+3. LLM plans, code executes
+   The LLM chooses lanes and forms, but trusted code performs SQL and validation. This is exactly the right safety boundary for business data.
+
+4. Numbers are treated as evidence
+   SQL results are passed to the final answer writer as exact numbers. The LLM is told not to invent or recompute figures.
+
+5. Hybrid retrieval is already in place
+   ORCA uses vector search plus BM25/RRF, which is stronger than vector-only demo RAG.
+
+6. Plan validation exists
+   The planner is caged: max steps, valid lanes, backward-only dependencies, fallback on bad plans.
+
+7. Eval culture is good
+   The repo records result correctness, process behavior, latency, token cost, and failure diagnosis. This is better than most early RAG builds.
+
+
+Most Important Code Observations
+1. The planner CPU is not the default.
+   In src/orca/brain/graph.py, build_brain() still defaults to design="parallel".
+   Several scripts call build_brain() without design="planner".
+   This means demos and evals can accidentally test the old architecture.
+
+   Recommendation:
+   Promote design="planner" to the default once accepted, or make every user-facing script pass design="planner" explicitly.
+
+2. The current "2D branches inside LangGraph" are partly inside LangGraph and partly inside Python.
+   LangGraph owns the outer planner -> run_wave -> conditional loop -> combine shape.
+   Inside run_wave, ThreadPoolExecutor runs ready steps in parallel.
+
+   This is pragmatic and acceptable now, but it weakens per-step LangGraph tracing, checkpointing, retries, and observability.
+
+   Recommendation:
+   Keep the current wave runner short-term. Later, consider LangGraph Send/subgraph-style dynamic workers if step-level traceability becomes more important.
+
+3. RBAC is only half-enforced.
+   allowed_files filters the catalog/doc list shown to the planner/router.
+   But the actual HybridSearcher is still built over company_id and optional text_file_id, not an allowed file set.
+
+   Recommendation:
+   Before multi-user, enforce allowed_files inside retrieval itself, not only inside prompts/catalogs.
+
+4. Worker exceptions can fail the whole wave.
+   If a future raises in runner.py, the whole invoke can fail.
+
+   Recommendation:
+   Catch exceptions per step and store a structured step error so combine can answer partials or decline only the failed part.
+
+5. There are no real tests under tests/.
+   The eval scripts are useful, but they are not CI-grade regression gates.
+
+   Recommendation:
+   Add pytest tests for plan validation, wave scheduling, placeholder filling, fallback plans, SQL form execution, permissions, and combine behavior.
+
+
+Research Benchmark
+Primary sources checked:
+- Agentic Retrieval-Augmented Generation: A Survey on Agentic RAG, arXiv 2501.09136
+- An LLM Compiler for Parallel Function Calling, arXiv 2312.04511
+- LangGraph official docs: overview, persistence, testing, observability
+- RAG evaluation surveys, including arXiv 2504.14891 and 2405.07437
+
+What the research says elite Agentic RAG needs:
+- Planning
+- Tool use
+- Multi-step workflow control
+- Memory
+- Reflection/self-check
+- Multi-agent or worker coordination
+- Evaluation
+- Efficiency/latency control
+- Governance/security
+- Observability
+
+ORCA already has:
+- Planning
+- Tool use
+- Multi-step workflow control
+- Worker coordination through lanes/waves
+- Evaluation scripts
+- Token/cost metering
+- Hybrid retrieval
+- Caged SQL execution
+
+ORCA still needs:
+- Calculate worker
+- Reflection/self-check
+- Conversation memory/checkpointing
+- Production tracing
+- Stronger automated testing
+- Retrieval-side RBAC
+- Catalog semantics
+
+
+Recommended Implementation Priority
+Priority 1 - Make planner CPU the real default
+Why:
+The repo says planner+waves is the CPU, but default runtime still uses parallel. This can mislead demos and evals.
+
+Concrete work:
+- Change build_brain default from design="parallel" to design="planner", or update all scripts to pass design="planner".
+- Update script output to show which design is running.
+- Keep old designs selectable for historical eval comparison.
+
+
+Priority 2 - Add caged CALCULATE worker
+Why:
+This is the biggest capability gap. ORCA can aggregate but cannot compute across results, such as total sales / invoice count.
+
+Concrete work:
+- Add lane "calculate" to planner validation.
+- Add a calculate form with whitelisted operations:
+  - divide
+  - ratio
+  - difference
+  - percent_change
+  - variance
+  - projection_with_assumption
+- Planner selects function and input step numbers.
+- Code executes math, never the LLM.
+- Add eval cases where calculate is required.
+
+
+Priority 3 - Add catalog meanings
+Why:
+The planner can choose the wrong sheet when business words are ambiguous, for example "what was bought" mapping to Expenses instead of Sales remarks.
+
+Concrete work:
+- Add one-line plain-English sheet descriptions.
+- Add optional column descriptions/synonyms.
+- Include descriptions in catalog_text().
+- Add evals for ambiguous business wording.
+
+
+Priority 4 - Enforce allowed_files inside retrieval
+Why:
+Catalog filtering prevents the LLM from seeing unauthorized file names, but actual retrieval must also be filtered before multi-user use.
+
+Concrete work:
+- Let HybridSearcher accept allowed_files.
+- Filter chunks and BM25 corpus by allowed_files.
+- Ensure vector search uses equivalent file filters or post-filtering.
+- Add tests proving unauthorized chunks cannot appear.
+
+
+Priority 5 - Add step-level tracing
+Why:
+As plans become multi-step, debugging needs a structured trace, not just final answers.
+
+Trace should record:
+- original question
+- planner raw JSON
+- validated plan
+- fallback reason if used
+- wave number
+- ready steps
+- filled step questions
+- lane
+- SQL form
+- SQL query
+- retrieved chunk ids/pages
+- result summary
+- token/cost per LLM call
+- per-step errors
+
+
+Priority 6 - Add self-check/reflection node
+Why:
+Agentic RAG research repeatedly identifies reflection/self-check as a core agentic pattern. ORCA currently relies mostly on final combine instructions.
+
+Concrete work:
+- Add a self_check node after combine.
+- Check whether every claim has evidence.
+- Check whether numbers come only from numbers blocks.
+- Check whether unanswered parts are clearly declined.
+- Keep it caged: it can approve, request one retry, or force a safer refusal.
+
+
+Priority 7 - Add LangGraph checkpointing / memory
+Why:
+Conversation memory is needed for follow-ups like "compare that to last year." But it should come after the single-turn CPU is stable.
+
+Concrete work:
+- Compile graph with a checkpointer.
+- Use thread_id per conversation.
+- Add short-turn memory first.
+- Add evals for multi-turn known-answer conversations.
+
+
+Final Product Judgment
+ORCA is not just a normal RAG system. The planner+waves design, caged SQL, exact-number evidence, and eval discipline put it on the path to a real agentic business analyst.
+
+But do not call it elite yet in product terms. Call it an elite architecture prototype.
+
+It becomes genuinely elite when:
+- planner is the default,
+- calculate exists,
+- RBAC is enforced in retrieval,
+- catalog meanings reduce wrong-sheet choices,
+- steps are traceable,
+- self-check catches unsupported claims,
+- evals become repeatable CI gates.

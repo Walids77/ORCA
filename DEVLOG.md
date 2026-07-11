@@ -2,6 +2,43 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-11 — Session 16: CALCULATE worker + catalog meanings + clean-data round — first 15/15
+- **Planner = the default brain.** `build_brain()` now builds the planner+waves CPU
+  (was "parallel" — demos/evals could accidentally run the old design; the session's
+  code-review file flagged it first). Older designs stay selectable; the historical
+  20-question survey eval pinned to its original wiring.
+- **Caged CALCULATE worker (the third lane).** The planner picks a whitelisted math
+  function (divide/ratio · difference · percent-change · projection) and names which
+  step answers feed it; OUR tested code extracts the numbers and computes — zero LLM
+  calls in the lane, cage rejections unit-tested. The Session-13/15 average-basket
+  question now passes every run.
+- **Catalog MEANINGS.** One plain-English line per sheet (`data/sheet_meanings.json`,
+  git-ignored) injected into every catalog the planner/router/form sees — ambiguous
+  words now map to the right sheet ("what was bought" → client Sales, not company
+  Expenses; the Session-15 December fail is closed). Tuning = editing text, not code.
+- **Per-step safety net:** a crashing step fails alone with a stored reason; the
+  combine answers the parts that worked.
+- **Purge-first re-ingest (bug found by real use):** Walid's renamed "% Profit"
+  column crashed re-ingest (the old table layout lingered) → the Excel path now
+  drops all of a file's tables first, like the PDF path. Standing policy (Walid):
+  re-upload = delete ALL the file's traces from BOTH stores, then store fresh.
+- **Refined-data round:** Walid applied the workbook fix list (`data/OB7OLA_FIX_LIST.md`)
+  — invoices total, Client + Items columns, month cells, header rename, date cells,
+  stale total cells. Quality scan: 14 → **0 issues**. The ingest proof-check caught the
+  stale Invoices/Orders/Expenses/Profit totals BEFORE he fixed them (the checker works).
+- **Eval (4 runs, no-lucky-passes):** 13/15 · 14/15 (mid-fix) · 11/15 · **15/15 — the
+  first perfect run ever**. Stable 4/4: 11 questions incl. February DEPTH + CALCULATE.
+  Flaky: the fragile survey fact (retrieval-precision pile) + numbers-form
+  nondeterminism (once SUM-instead-of-COUNT; list steps occasionally empty). Plan layer
+  60/60 correct. Average-basket key re-verified to **22.99** (the source is now
+  self-consistent). Record: `eval/refined_data_2026-07-11.md` (git-ignored).
+- **`brain_flow_2d.html`** (git-ignored): interactive click-through of the REAL
+  February 2D trace — planner → wave 1 → handoff → wave 2 → combine, with the
+  notebook filling live. Built for next session's rehearsal.
+- **Next session (17):** rehearse the brain flow with Walid; design the ingest
+  NOTIFICATION GATE (show data problems to the user to fix-or-proceed BEFORE full
+  parsing — item #11 grown up); stabilize the numbers form; spelling cleanup (#6) owed.
+
 ## 2026-07-10 — Session 15: the router becomes a PLANNER + plan-runner in parallel waves — SHIPS at 12/13
 - **Morning research (Walid's brainstorm):** RBAC-in-the-router, catalog scaling, branch-
   selection best practice, the "3rd dimension", music embeddings — web + GitHub checked.

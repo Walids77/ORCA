@@ -44,7 +44,10 @@ QUESTIONS = [
 # pinned to the survey: this eval's baseline was measured on that document
 # alone, and it must stay comparable across runs (the brain's DEFAULT now
 # searches all of the tenant's documents together)
-brain = build_brain(text_file_id="agentic_rag_survey")
+# pinned to design="straight" too: the ~65-75% baseline was measured on the
+# Session-12 straight wiring, BEFORE the planner became the brain's default
+brain = build_brain(text_file_id="agentic_rag_survey", design="straight")
+print("DESIGN: straight (pinned — historical baseline comparison)\n")
 
 for qid, q, expected in QUESTIONS:
     final = brain.invoke({"question": q})

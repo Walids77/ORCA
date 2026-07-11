@@ -15,6 +15,7 @@ from __future__ import annotations
 import re
 from concurrent.futures import ThreadPoolExecutor
 
+from orca.brain.calculate import run_calculation
 from orca.brain.numbers import plan_query, run_plan, result_text
 from orca.brain.planner import MAX_STEPS, _PLACEHOLDER
 from orca.brain.state import Notebook
@@ -102,12 +103,23 @@ def make_plan_runner_node(text_searcher: HybridSearcher, sql: SqlStore,
 
     def run_one_step(step: dict, step_results: dict) -> dict:
         question = _fill_question(step, step_results)
-        if step["lane"] == "text":
-            return {"lane": "text", "question": question,
-                    "hits": text_searcher.search(question, k=k)}
-        form = plan_query(question, menu)        # MOVE 1: the LLM fills the form
-        result = run_plan(sql, catalog, form)    # MOVE 2: our code runs the SQL
-        return {"lane": "numbers", "question": question, "result": result}
+        try:
+            if step["lane"] == "text":
+                return {"lane": "text", "question": question,
+                        "hits": text_searcher.search(question, k=k)}
+            if step["lane"] == "calculate":
+                # Session 16: no LLM here — the plan already names the function
+                # and inputs; our whitelisted code does the math.
+                return {"lane": "calculate", "question": question,
+                        "result": run_calculation(step, step_results)}
+            form = plan_query(question, menu)        # MOVE 1: the LLM fills the form
+            result = run_plan(sql, catalog, form)    # MOVE 2: our code runs the SQL
+            return {"lane": "numbers", "question": question, "result": result}
+        except Exception as exc:                     # noqa: BLE001
+            # Session 16 safety net: a crashing step fails ALONE — combine
+            # answers the parts that worked and names the part that didn't.
+            return {"lane": step["lane"], "question": question,
+                    "result": {"needed": True, "error": f"step failed: {exc}"}}
 
     def plan_runner_node(notebook: Notebook) -> dict:
         plan = notebook.get("plan") or []

@@ -19,12 +19,29 @@ from __future__ import annotations
 
 import json
 import logging
+from pathlib import Path
 from typing import Any
 
 from orca.brain.llm import ask
 from orca.stores.sql_store import SqlStore
 
 logger = logging.getLogger(__name__)
+
+# Session 16 — catalog MEANINGS: one plain-English line per sheet, written by
+# the tenant (git-ignored — real business wording stays private). The catalog
+# alone gives the planner NAMES; this gives it MEANINGS, so ambiguous words
+# ("what was bought") map to the right sheet (client sales vs company spending
+# — the Session-15 December wrong-sheet failure).
+MEANINGS_PATH = Path("data/sheet_meanings.json")
+
+
+def load_meanings(path: Path = MEANINGS_PATH) -> dict:
+    """{file_id: {sheet: one-line meaning}} — missing file = no meanings."""
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.warning("No usable sheet meanings at %s (%s)", path, exc)
+        return {}
 
 # The only operations the executor will ever run (the cage's whitelist).
 # LIST = return the matching rows themselves (for "show me..." questions),
@@ -52,6 +69,7 @@ def load_catalog(sql: SqlStore, company_id: str,
     restriction (single-user today); the multi-user layer later passes the
     per-role set here — a data change, not a redesign.
     """
+    meanings = load_meanings()
     entries = []
     for row in sql.query(
         "SELECT file_id, sheet, table_name, columns, row_count FROM orca_catalog "
@@ -78,6 +96,8 @@ def load_catalog(sql: SqlStore, company_id: str,
             "col_types": {orig: ("number" if types.get(safe) == "REAL" else "text")
                           for orig, safe in col_map.items()},
             "sample_row": sample_row,
+            # the tenant's one-line meaning for this sheet ("" = none written)
+            "meaning": (meanings.get(row["file_id"]) or {}).get(row["sheet"], ""),
         })
     return entries
 
@@ -88,6 +108,8 @@ def catalog_text(catalog: list[dict]) -> str:
     for e in catalog:
         cols = ", ".join(f"{name} ({t})" for name, t in e["col_types"].items())
         lines.append(f"- sheet \"{e['sheet']}\" (file {e['file_id']}, {e['row_count']} rows)")
+        if e.get("meaning"):
+            lines.append(f"    meaning: {e['meaning']}")
         lines.append(f"    columns: {cols}")
         if e["sample_row"]:
             sample = ", ".join(f"{k}={str(v)[:30]}" for k, v in e["sample_row"].items()

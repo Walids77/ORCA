@@ -120,7 +120,13 @@ class SqlStore:
     # -- writing --------------------------------------------------------------
     def store_workbook(self, company_id: str, file_id: str,
                        extract: WorkbookExtract) -> None:
-        """Store every non-empty sheet of a workbook."""
+        """Store every non-empty sheet of a workbook.
+
+        Purges the file's previous tables first (same as the PDF path): a
+        re-uploaded workbook may have RENAMED or reshaped columns, and
+        CREATE TABLE IF NOT EXISTS would otherwise keep the stale layout.
+        (Session 16: a renamed '% Profit' column crashed the re-ingest.)"""
+        self.purge_file(company_id, file_id)
         for sheet in extract.sheets:
             if sheet.n_rows == 0:
                 continue
