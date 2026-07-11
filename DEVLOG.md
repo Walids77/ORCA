@@ -2,6 +2,28 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-11 — Session 17: brain-flow rehearsal + the CPU growth backlog (discussion, no engine code)
+- **CPU gap review (Walid's opening question).** Confirmed the three lanes (text · numbers ·
+  calculate) + the 2D planner cover single questions; the five missing organs are now a
+  saved, prioritized **CPU GROWTH BACKLOG** in the brief — conversation memory · a capped
+  judge-and-retry loop · an answer self-check · the conditional re-planner (3D) · a
+  clarify-with-the-user path — each to be built one at a time and eval-gated ("earns its keep").
+- **Rehearsal done — Walid owns the CPU.** Walked the real February trace station by station,
+  each with a judging question. He correctly explained the placeholder/dependency, localized
+  the SUM-instead-of-COUNT fault to the FORM (not the SQL) from the answer's shape alone, and
+  proposed the fix himself (a dictionary of question examples = few-shot examples — already
+  lever 1 of the form-stabilization task).
+- **Timing model locked:** the plan is written ONCE upfront; each step's form is written
+  JUST-IN-TIME when its wave runs (step 2's form can't exist before wave 1 — its question is
+  incomplete until the handoff fills the placeholder); the runner loops one lap per wave.
+- **New diagnostic rule taught:** *fails sometimes = an AI move; fails always = our code* —
+  flakiness is a fingerprint that tells you which kind of station to open.
+- **Saved for re-reading:** `brain_flow_timeline.md` (git-ignored — real figures): the full
+  timeline diagram + timing table + Walid's 6-rule trace-reading card.
+- **Next session (18):** design the ingest notification gate (fix-or-proceed before parsing) ·
+  stabilize the numbers form (few-shot dictionary + lower temperature + retry-on-empty,
+  re-eval'd on the 15-question set) · owed: spelling cleanup, pytest + CI, AWS case check.
+
 ## 2026-07-11 — Session 16: CALCULATE worker + catalog meanings + clean-data round — first 15/15
 - **Planner = the default brain.** `build_brain()` now builds the planner+waves CPU
   (was "parallel" — demos/evals could accidentally run the old design; the session's
