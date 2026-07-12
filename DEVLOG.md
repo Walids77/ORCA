@@ -2,6 +2,25 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-12 — Session 18 (open): round vs wave + the roadmap gets a visual (discussion, no engine code)
+- **Walid restated the round/wave timing model in his own words — confirmed correct,**
+  two nuances added: (a) it's one small form PER STEP, not one form for the whole round
+  (several get written together only because several steps are ready together); (b) a
+  later round's form can't be written earlier because its question has a blank that
+  only the previous round's result fills.
+- **Naming preference locked (conversation-only):** say "round 1, round 2…" to Walid,
+  never "wave" — he can't visualize "wave", "round" is concrete. Explicit call: do NOT
+  rename anything in code (`runner.py`, `planner.py`, `graph.py`, `state.py`) or in
+  existing docs/session history — those keep "wave".
+- **Built a Now/Next/Later roadmap** (Claude Artifact) answering "what's still waiting
+  after Session 18?" — then registered the missing piece into `progress.html`: the
+  **CPU growth backlog now has its own numbered visual block** (was prose-only before),
+  same style as the Excel 7-stage pipeline.
+- **Session 18's 3 locked items are still queued, unchanged:** design the ingest
+  notification gate (discuss first) · stabilize the numbers form (few-shot dictionary ·
+  lower temperature · retry-on-empty, re-eval'd no-lucky-passes) · owed housekeeping
+  (spelling cleanup · pytest + CI · AWS case check).
+
 ## 2026-07-11 — Session 17: brain-flow rehearsal + the CPU growth backlog (discussion, no engine code)
 - **CPU gap review (Walid's opening question).** Confirmed the three lanes (text · numbers ·
   calculate) + the 2D planner cover single questions; the five missing organs are now a

@@ -201,7 +201,7 @@
 <body>
 
 <h1>🐋 ORCA — Progress</h1>
-<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 11, 2026</strong></p>
+<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 12, 2026</strong></p>
 
 <!-- ============ HERO: WHERE ORCA STANDS ============ -->
 <div class="dash">
@@ -488,6 +488,24 @@
     under the no-lucky-passes rule.</p>
   </div>
 </div>
+
+<div class="card">
+  <p style="margin-bottom:.7rem"><strong>The CPU growth backlog — Walid's own priority list (Session 17).</strong>
+  Five missing organs, built <strong>ONE at a time</strong>; each must earn its keep by eval before it stays.
+  None built yet — this is the queue, in order.</p>
+  <div class="pipe">
+    <div class="step"><div class="num" style="background:var(--later-bg);color:var(--muted);border:1.5px solid var(--line)">1</div><div class="txt"><b>Conversation memory</b><br><span>remember earlier questions in the same conversation (item #16) — the biggest missing organ, cheaper built early than bolted on later</span></div></div>
+    <div class="stepline"></div>
+    <div class="step"><div class="num" style="background:var(--later-bg);color:var(--muted);border:1.5px solid var(--line)">2</div><div class="txt"><b>Judge-and-retry loop</b><br><span>capped: if an answer comes back weak or empty, retry once with different wording / higher k / the other lane — the "refused-but-answerable" fix</span></div></div>
+    <div class="stepline"></div>
+    <div class="step"><div class="num" style="background:var(--later-bg);color:var(--muted);border:1.5px solid var(--line)">3</div><div class="txt"><b>Answer self-check</b><br><span>check the drafted answer against the retrieved evidence before replying — the "confidently-wrong" fix, the trust layer's last fence</span></div></div>
+    <div class="stepline"></div>
+    <div class="step"><div class="num" style="background:var(--later-bg);color:var(--muted);border:1.5px solid var(--line)">4</div><div class="txt"><b>Conditional re-planner</b><br><span>the 3rd dimension: let a plan branch on an intermediate answer, instead of being fixed the moment it's written</span></div></div>
+    <div class="stepline"></div>
+    <div class="step"><div class="num" style="background:var(--later-bg);color:var(--muted);border:1.5px solid var(--line)">5</div><div class="txt"><b>Clarify with the user</b><br><span>a genuinely ambiguous question gets ONE short question back instead of a silent guess</span></div></div>
+  </div>
+  <p style="margin-top:.7rem;color:var(--muted);font-size:.88rem">Explicitly NOT on this list: the reranker (a text-lane part upgrade, waits on Bedrock) and MCP live connectors (a new door into the CPU, not new thinking).</p>
+</div>
 <div class="connector"></div>
 
 <div class="card phase">
@@ -530,6 +548,11 @@
 <h2>📓 Session log — click a session to read it</h2>
 
 <details class="session" open>
+  <summary>Jul 12 · Session 18 (open) <span class="when">round vs wave + the roadmap gets its own visual</span></summary>
+  <p>Short opening session, no engine code. Walid restated the whole plan-runner timing model in his own words ("round 1, round 2…") and got it right — the runner checks the plan, fires every step whose dependency is met, waits for the whole round, then checks again; two nuances added: it's one small form <em>per step</em> (several get written at once only because several steps are ready at once), and a later round's form literally can't be written earlier because its question has a blank only the previous round fills. Locked a naming preference: say <b>"round 1, round 2…"</b> to him, never "wave" — conversation only, the code (<code>runner.py</code>, <code>planner.py</code>, <code>graph.py</code>, <code>state.py</code>) and all past docs/history keep "wave" untouched, by his explicit call. Then built a visual roadmap (Now → Next → Later) to answer his question "what's still waiting after Session 18?" — and when he asked whether it was already visible here, the answer was "only in prose" — so the <b>CPU growth backlog now has its own numbered block</b> on this page (below), matching the same visual style as the Excel 7-stage pipeline. The three Session-18 items (notification gate design · numbers-form stabilization · owed housekeeping) are still queued, unchanged, for the next working session.</p>
+</details>
+
+<details class="session">
   <summary>Jul 11 · Session 17 <span class="when">the rehearsal — Walid takes ownership of the CPU + the growth backlog</span></summary>
   <p>A discussion session with no engine code — and exactly the kind that compounds. It opened with Walid's own question: <b>"what do we still need to put inside the CPU?"</b> His map was already right (three lanes + the 2D planner cover single questions), and the answer became a saved, prioritized <b>CPU GROWTH BACKLOG</b> of five organs, each to be built one at a time and each required to <b>earn its keep by eval</b>: conversation memory (follow-up questions need the previous turn) · a capped <b>judge-and-retry loop</b> (the "refused-but-answerable" fix) · an <b>answer self-check</b> (the "confidently-wrong" fix) · the conditional <b>re-planner</b> (plans that branch on an intermediate answer — the true 3rd dimension, un-parked) · a <b>clarify-with-the-user</b> path (ask one short question instead of silently guessing). Then the rehearsal itself, station by station on the real February trace — and Walid passed every check: he explained why the placeholder exists (dependency), and given only a wrong answer's <i>shape</i> ("how many orders?" → a money figure), he <b>localized the fault to the form, not the SQL</b> — then proposed the fix himself: a dictionary of question examples, which is exactly the <b>few-shot examples</b> lever already planned for the form-stabilization task. Along the way he independently derived <b>eval-driven development</b> (know the industry → its data + question types → build the eval list → the plans reveal which capabilities are missing → build only those), sharpened with one addition: the eval list must also hold questions the system should <i>refuse</i>. Two models now locked in his head: the <b>timing rule</b> (the plan is written ONCE upfront; each step's form is written JUST-IN-TIME when its wave runs — step 2's form can't exist before wave 1 fills its placeholder) and <b>rule 6, the flakiness fingerprint: fails sometimes = an AI move; fails always = our code</b> — deterministic stations can't fail intermittently, so a once-in-four-runs empty list points straight at the form. Everything he needs to re-read — the full timeline diagram, the timing table, and his 6-rule <b>trace-reading card</b> — is saved in <code>brain_flow_timeline.md</code>. Session 18: design the ingest <b>notification gate</b> (fix-or-proceed before parsing) + stabilize the numbers form, re-eval'd under the no-lucky-passes rule.</p>
 </details>
