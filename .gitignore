@@ -37,3 +37,7 @@ scripts/run_mixed_eval.py
 eval/refined_data_2026-07-11.md
 brain_flow_2d.html
 brain_flow_timeline.md
+
+# PRIVATE — the Sheet Surveyor (Excel structure-mapping). Walid's secret sauce:
+# never goes to the public repo. It has its OWN private git repo inside private/.
+private/

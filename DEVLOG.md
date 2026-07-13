@@ -2,7 +2,49 @@
 
 > Newest entry first. One dated entry per work session.
 
-## 2026-07-12 — Session 18 (open): round vs wave + the roadmap gets a visual (discussion, no engine code)
+## 2026-07-13 — Session 18: structure-aware Excel ingestion + the fix-or-proceed gate
+> Note: the parser's internals are kept private (see `private/`, not in this repo). This entry
+> records the problem, the design decisions and the measured results — not the method.
+- **Started as the ingest notification-gate design; became the pillar underneath it.** Industry
+  check: mature data pipelines **quarantine bad rows, they don't reject files** — but RAG
+  pipelines **do** stop before indexing and ask a human when confidence is low. Design agreed:
+  **BLOCK** only if nothing is readable (password-protected, empty) · **FIX-OR-PROCEED** for
+  anything that would make ORCA confidently **WRONG** (an unlabelled total, a misread header,
+  broken dates) · **WARN + PROCEED** for anything that only makes answers *worse* (spelling
+  variants, sparse cells). **Never reject a file; never ingest silently.** Guiding principle:
+  *a company will not reshape a thousand spreadsheets to suit our RAG — the parser bends, not them.*
+- **Tested the existing reader on two REAL business workbooks; it failed SILENTLY** — the worst
+  failure mode, because nothing looks broken. On a 30-sheet corporate workbook it mistook a
+  decorative banner for the header row (most columns ended up unnamed), reported **878 data rows
+  where 22 exist**, and merged three side-by-side tables into one — while raising a single warning
+  for the entire file. Separately, a fresh copy of a workbook cleaned in Session 16 came back with
+  its data errors **restored** → **data quality DRIFTS**: the gate must run on *every* upload,
+  not just the first.
+- **Built a structure-aware sheet reader** (read-only, no LLM, nothing stored). It reports what it
+  understood *before* anything is ingested: where the real tables are, the true header row (with a
+  confidence score), multi-level headers, which rows are real records vs totals vs unused template
+  rows, what each column is *for* (exact-filterable category vs free text vs computed), which
+  columns are sparse **by design** (an empty cell there means zero, not missing), and which tables
+  **feed** which — within a sheet and across sheets. On the hard workbook it now reads the correct
+  header row, keeps **23 real rows instead of 878**, separates the side-by-side tables, and catches
+  a TOTAL row that sits *above* its data. The clean workbook still reads correctly — no regression.
+- **Why a human gate at all — the evidence:** the best *published* spreadsheet table detection
+  scores **78.9% F1** (SpreadsheetLLM, Microsoft Research) — roughly **one table in five gets its
+  boundaries wrong**. Full automation is not achievable today, by anyone. That is the argument for
+  showing the user what we understood and letting them confirm. Benchmarked the standard library
+  (`unstructured`) head-to-head on the same sheet: it returned **879 rows, 47,081 empty cells and
+  304 KB of HTML** for a sheet holding 22 sales, with side-by-side tables merged and no awareness
+  of headers or totals. **No off-the-shelf tool solves this.**
+- **Settled: `.xlsx` stores no per-cell edit history** (Track Changes must be enabled beforehand;
+  Show Changes needs OneDrive/SharePoint). So ORCA will **build that history itself** by diffing
+  each re-upload against the last — cells that never change are structure, cells that grow downward
+  are the living data. A live source connector (item #18) would provide the real history for free.
+- **Next:** render each detected table in a clean form for the vector store → then let the LLM name
+  what each table **means** (auto-filling the sheet-meanings catalog) → then ship the user-facing
+  fix-or-proceed report. This one build closes item **#11**, the **notification gate**, and
+  **organ #5** of the CPU backlog (clarify-with-the-user).
+
+## 2026-07-12 — Session 18 (opening): round vs wave + the roadmap gets a visual (discussion, no engine code)
 - **Walid restated the round/wave timing model in his own words — confirmed correct,**
   two nuances added: (a) it's one small form PER STEP, not one form for the whole round
   (several get written together only because several steps are ready together); (b) a

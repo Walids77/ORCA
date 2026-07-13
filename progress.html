@@ -201,7 +201,7 @@
 <body>
 
 <h1>🐋 ORCA — Progress</h1>
-<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 12, 2026</strong></p>
+<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 13, 2026</strong></p>
 
 <!-- ============ HERO: WHERE ORCA STANDS ============ -->
 <div class="dash">
@@ -482,11 +482,25 @@
     first perfect 15/15 run; Session 17 was the rehearsal</strong> — Walid now owns the
     CPU, and the five missing organs are a saved, eval-gated backlog (memory · retry
     loop · self-check · re-planner · clarify).
-    <strong>Next (Session 18): the ingest notification gate</strong> (show the user the
-    data problems to fix-or-proceed BEFORE parsing) + <strong>stabilize the numbers
-    form</strong> (few-shot examples · lower temperature · retry-on-empty), re-eval'd
-    under the no-lucky-passes rule.</p>
+    <strong>Session 18 turned to the INGEST GATE</strong> (see the block below) — the
+    numbers-form stabilization stays queued behind it.</p>
   </div>
+</div>
+
+<div class="card">
+  <p style="margin-bottom:.7rem"><strong>The ingest GATE — reading a messy Excel before we trust it (Session 18).</strong>
+  Tested on a real 30-sheet corporate workbook, the old reader failed <em>silently</em>: it took a
+  decorative banner as the header (29 of 31 columns became <code>column_2</code>, <code>column_3</code>…),
+  reported <b>878 rows where 22 exist</b>, and mashed three side-by-side tables into one — while raising
+  <b>one</b> warning for the whole file. Garbage in, confidently wrong out. Three layers fix it:</p>
+  <div class="pipe">
+    <div class="step"><div class="num" style="background:var(--done-bg);color:var(--done);border:1.5px solid var(--done)">1</div><div class="txt"><b>Read the structure — our code, no AI</b> <em>(built + tested ✓)</em><br><span>before anything is ingested, ORCA reports what it understood: where the real tables are (a sheet can hold several, side by side) · the true header row, with a confidence score · multi-level headers · which rows are real records vs totals vs unused template rows · what each column is <em>for</em> · which columns are sparse <b>by design</b> (“empty here means zero, not missing”) · and which tables <b>feed</b> which, within and across sheets. On the hard workbook: the correct header row, <b>23 real rows instead of 878</b>, side-by-side tables separated, and a TOTAL row caught even though it sits <em>above</em> its data</span></div></div>
+    <div class="stepline"></div>
+    <div class="step"><div class="num" style="background:var(--now-bg);color:var(--now);border:1.5px solid var(--now)">2</div><div class="txt"><b>The LLM names the MEANING</b> <em>(next)</em><br><span>fed the clean structural map, not the raw cells — so it’s cheap. “This is May 2022 boutique sales in SAR, one row per item sold.” It never touches the numbers; our code still extracts and calculates. This is what auto-fills the sheet-meanings file instead of us hand-editing it</span></div></div>
+    <div class="stepline"></div>
+    <div class="step"><div class="num" style="background:var(--later-bg);color:var(--muted);border:1.5px solid var(--line)">3</div><div class="txt"><b>The gate report — fix or proceed</b><br><span>never reject a file, never ingest silently. <b>Block</b> only if nothing is readable · <b>fix-or-proceed</b> for anything that would make ORCA confidently <em>wrong</em> · <b>warn</b> for anything that only makes answers worse. The user’s confirmations are saved as the file’s <b>reading card</b> and re-used on every re-upload</span></div></div>
+  </div>
+  <p style="margin-top:.7rem;color:var(--muted);font-size:.88rem">Why a human gate at all? The best <em>published</em> spreadsheet table detection scores <b>78.9%</b> — about one table in five gets its boundaries wrong. Nobody can fully automate this yet. And the industry-standard library, tested head-to-head on the same sheet, returned <b>879 rows, 47,081 empty cells and 304&nbsp;KB of HTML</b> where we return 23 clean rows. This is ORCA's differentiator, and it closes three roadmap items at once (data-quality advisor · notification gate · clarify-with-the-user).</p>
 </div>
 
 <div class="card">
@@ -548,7 +562,11 @@
 <h2>📓 Session log — click a session to read it</h2>
 
 <details class="session" open>
-  <summary>Jul 12 · Session 18 (open) <span class="when">round vs wave + the roadmap gets its own visual</span></summary>
+  <summary>Jul 13 · Session 18 <span class="when">teaching ORCA to actually read a messy Excel</span></summary>
+  <p>This began as a design chat about the ingest gate and turned into the pillar underneath it. The industry check settled the philosophy: mature pipelines <b>quarantine bad data, they don't reject files</b> — but RAG pipelines <em>do</em> stop before indexing and ask a human when confidence is low. So: <b>never reject a file, never ingest it silently.</b> Walid's framing — a company will not reshape a thousand spreadsheets to suit our RAG; <b>the parser bends, not them.</b> Then we tested the current reader on two real business workbooks, and it failed <em>silently</em>, which is the worst way to fail: on a 30-sheet corporate file it mistook a <b>decorative banner for the header row</b> (most columns ended up unnamed), claimed <b>878 data rows where 22 exist</b>, glued three side-by-side tables into one — and raised a single warning for the entire file. Meanwhile a fresh copy of the workbook Walid had cleaned in Session 16 came back with its errors <em>restored</em> — proving <b>data quality drifts</b>, so the gate must run on <em>every</em> upload, not just the first. So we built a structure-aware reader (our code, no AI): before anything is ingested it now reports what it understood — where the real tables are, the true header row with a confidence score, multi-level headers, which rows are real records versus totals versus unused template rows, what each column is <em>for</em>, which columns are sparse <b>by design</b> ("empty here means zero, not missing"), and <b>which tables feed which</b>, inside a sheet and across sheets. It reads the hard workbook correctly now: <b>23 real rows instead of 878</b>, the side-by-side tables separated, a TOTAL row caught even though it sits <em>above</em> its data — and no regression on the clean file. Two claims were tested rather than trusted: the best <em>published</em> spreadsheet table detection scores <b>78.9%</b> — about one table in five misread, which is exactly why a human confirmation gate is required, not optional — and the standard library, run head-to-head on the same sheet, returned <b>879 rows, 47,081 empty cells and 304 KB of HTML</b> where we return 23 clean rows. <b>No off-the-shelf tool solves this.</b> Also settled: Excel keeps <em>no</em> record of when a cell was filled, so ORCA will build that history itself by diffing each re-upload. Next: prepare each detected table for the vector store, then let the LLM name what each table <em>means</em>, then ship the fix-or-proceed report to the user.</p>
+</details>
+<details>
+  <summary>Jul 12 · Session 18 (opening) <span class="when">round vs wave + the roadmap gets its own visual</span></summary>
   <p>Short opening session, no engine code. Walid restated the whole plan-runner timing model in his own words ("round 1, round 2…") and got it right — the runner checks the plan, fires every step whose dependency is met, waits for the whole round, then checks again; two nuances added: it's one small form <em>per step</em> (several get written at once only because several steps are ready at once), and a later round's form literally can't be written earlier because its question has a blank only the previous round fills. Locked a naming preference: say <b>"round 1, round 2…"</b> to him, never "wave" — conversation only, the code (<code>runner.py</code>, <code>planner.py</code>, <code>graph.py</code>, <code>state.py</code>) and all past docs/history keep "wave" untouched, by his explicit call. Then built a visual roadmap (Now → Next → Later) to answer his question "what's still waiting after Session 18?" — and when he asked whether it was already visible here, the answer was "only in prose" — so the <b>CPU growth backlog now has its own numbered block</b> on this page (below), matching the same visual style as the Excel 7-stage pipeline. The three Session-18 items (notification gate design · numbers-form stabilization · owed housekeeping) are still queued, unchanged, for the next working session.</p>
 </details>
 
