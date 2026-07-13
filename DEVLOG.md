@@ -2,6 +2,37 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-14 — Session 19: the surveyor hardened by three eval rounds — Layer 1 closed
+> Parser internals stay private (see `private/`); this entry records method + measured results.
+- **Scouted the research for the Excel shapes that exist in the wild** (the DECO/Enron corpus:
+  75% of real sheets hold more than one region; Microsoft's SpreadsheetLLM) → generated **7 dummy
+  workbooks**, one per shape (multi-table, cross-tab, pivot-style, dates-as-headers, invoice,
+  indented hierarchy, all-text), each with the expected result **written down before the run**.
+  Score: 4 pass · 1 partial · 3 fail — predictions **8/8 correct**, and all three fails shared ONE
+  root cause: **totals stored as plain numbers, with no formula to betray them** (exactly how
+  PivotTables and hand-typed subtotal rows store them).
+- **Mutation round (Walid's idea = real mutation testing):** typed values into known zones of a
+  COPY of a real workbook — the blank "sea" between tables, the template zone, the total row, a
+  header cell. 4 exact passes (appending a sale line grows the table by exactly one row); two
+  typed cells in the gap **glued two tables into one** (proving blank space is the only wall —
+  now Layer 2's job to catch by meaning, Walid's call); and one test was voided by a discovery
+  bigger than the test: **files saved by software (not Excel) drop every formula's cached result**,
+  leaving any structure reader half-blind. That became a new gate warning.
+- **Built 12 levers, each re-eval'd against a before/after net over all 10 test files** (3 real
+  workbooks + 7 dummies): plain-value aggregate rows caught by re-doing the math ourselves —
+  **SUM / AVERAGE / COUNT / MIN / MAX**, each firing only when the row's label claims it (a decoy
+  client named "Max Weber" was correctly NOT flagged); total rows removed from real-record counts
+  (the May sheet now reads **22 real rows — the human count**; the old 23 double-counted the TOTAL
+  row); the "saved by a tool, not Excel" warning; dates/years accepted as column names (a
+  time-series sheet's 6 unnamed columns fixed); sentence-length header names flagged; header
+  search deepened to 15 rows; font-size title detection. The net also **caught one real regression
+  mid-round** (a summary sheet briefly misfiled as a data table) — fixed and re-proven same day.
+- Bonus catch on the real workbook: naming number-typed header cells exposed a **duplicate column
+  header** no one had noticed. Three eval records added under `eval/`.
+- **Layer 1 declared CLOSED** (no more levers without a failing eval demanding them). Next
+  session: hidden rows/columns detection + a dummy finance sheet (P&L — the hardest proven shape)
+  as Layer 1's final exam, then **Layer 2**: the LLM names each region's meaning.
+
 ## 2026-07-13 — Session 18: structure-aware Excel ingestion + the fix-or-proceed gate
 > Note: the parser's internals are kept private (see `private/`, not in this repo). This entry
 > records the problem, the design decisions and the measured results — not the method.
