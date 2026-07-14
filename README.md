@@ -9,7 +9,7 @@ and returns exact numbers, citations, and business explanations.
 > LangGraph), tested locally, then deployed to AWS piece by piece.
 
 ## Roadmap
-1. Local ingestion: a file → SQL rows + vectors + stored copy — **done ✅ (Excel · PDF prose · PDF number-tables→SQL)**
+1. Local ingestion: a file → SQL rows + vectors + stored copy — **done ✅ (Excel · PDF prose · PDF number-tables→SQL · embedded photos)**
 2. Agent brain (orchestrator) on LangGraph — **in progress 🚧** — the brain
    **plans**: a PLANNER writes a checklist (focused question · lane · waits-for),
    and a plan-runner executes it in capped parallel **waves** through the retrieval
@@ -49,6 +49,16 @@ section, page, and document title for citations — then embedded for semantic s
 Number-tables (invoices, orders) are stitched back together across pages, typed
 ("$1,234.56" → 1234.56), and routed to SQL like Excel — proven against a real
 order PDF (the items re-summed to the document's own printed total, to the cent).
+
+**Photos embedded in a spreadsheet** (product catalogs, stock lists, orders) are
+extracted from the workbook's own drawing layer — **every format, including the
+old WMF/EMF ones most tools silently drop** (on one real stock file that was 57
+of 100 photos) — tagged to the data row each one belongs to (by measured overlap;
+a photo sitting equally on two rows is flagged for confirmation, never guessed),
+captioned once by a vision model ("three metallic bangles in gold, rose gold,
+and silver"), and stored so both questions work: *"show me the image of item
+X"* (exact row lookup) and *"the black bracelet with the gold charm"* (meaning
+search over captions). Every vision call is token-metered.
 
 ## Setup / run (local)
 ORCA runs in its own virtual environment so its packages never disturb your global

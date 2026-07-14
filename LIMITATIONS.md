@@ -15,6 +15,13 @@
 
 ## The brain
 
+- **The brain can't RETURN photos yet.** The stores now hold every embedded
+  photo (extracted, row-tagged, captioned, meaning-searchable — Session 20),
+  and a direct store lookup answers "show me the image of item X" — but the
+  planner has no photo lane, so a user asking the brain gets text only.
+  *Fix path:* a photo-lookup step in the planner after the ingest gate ships,
+  with its own known-answer eval ("show me the image of the best seller").
+
 - **The numbers FORM is nondeterministic on rare runs.** The plan layer is solid
   (60/60 correct plans in the Session-16 eval, zero cage violations), but the
   form-filling call occasionally wobbles: once it chose SUM instead of COUNT for

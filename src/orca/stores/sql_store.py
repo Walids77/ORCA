@@ -111,6 +111,25 @@ class SqlStore:
             )
             """
         )
+        # Photos embedded in a workbook, each tagged to the data row it belongs
+        # to. Joins any sheet table via _orca_row = source_row, so "show me the
+        # image of item X" is: find the row (normal SQL) -> fetch its photo.
+        self._conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS orca_photos (
+                company_id  TEXT,
+                file_id     TEXT,
+                sheet       TEXT,
+                source_row  INTEGER,   -- 1-based Excel row the photo belongs to
+                path        TEXT,      -- extracted image file (PNG for converted ones)
+                caption     TEXT,      -- one factual line from the vision model
+                format      TEXT,      -- original format in the workbook (png/emf/...)
+                converted   INTEGER,   -- 1 = old vector format, converted to PNG
+                ambiguous   INTEGER,   -- 1 = sat equally on two rows; needs gate confirm
+                PRIMARY KEY (company_id, file_id, sheet, source_row, path)
+            )
+            """
+        )
         self._conn.commit()
 
     def _table_name(self, file_id: str, sheet: str) -> str:
@@ -149,6 +168,11 @@ class SqlStore:
             self._conn.execute(f'DROP TABLE IF EXISTS "{row["table_name"]}"')
         self._conn.execute(
             "DELETE FROM orca_catalog WHERE company_id = ? AND file_id = ?",
+            (company_id, file_id),
+        )
+        # standing policy (Session 16): a re-upload wipes ALL the file's traces
+        self._conn.execute(
+            "DELETE FROM orca_photos WHERE company_id = ? AND file_id = ?",
             (company_id, file_id),
         )
         self._conn.commit()
@@ -230,6 +254,35 @@ class SqlStore:
         )
         logger.info("Stored %r -> table %r (%d rows, %d total-rows)",
                     sheet.sheet_name, table, len(sheet.rows), len(agg))
+
+    def store_photos(self, company_id: str, file_id: str,
+                     photos: list[dict]) -> None:
+        """Store the file's embedded photos, each tagged to its data row.
+
+        `photos` dicts carry: sheet, row (1-based Excel row), path, caption,
+        format, converted, ambiguous. Wholesale-replaces the file's previous
+        photo records (same policy as every other store)."""
+        self._conn.execute(
+            "DELETE FROM orca_photos WHERE company_id = ? AND file_id = ?",
+            (company_id, file_id),
+        )
+        self._conn.executemany(
+            """
+            INSERT OR REPLACE INTO orca_photos
+                (company_id, file_id, sheet, source_row, path, caption,
+                 format, converted, ambiguous)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (company_id, file_id, p["sheet"], p["row"], p["path"],
+                 p.get("caption", ""), p.get("format", ""),
+                 1 if p.get("converted") else 0, 1 if p.get("ambiguous") else 0)
+                for p in photos
+            ],
+        )
+        self._conn.commit()
+        logger.info("Stored %d photo record(s) for %s/%s",
+                    len(photos), company_id, file_id)
 
     # -- reading (read-only helper, for tests / the agent later) --------------
     def query(self, sql: str, params: tuple = ()) -> list[sqlite3.Row]:

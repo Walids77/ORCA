@@ -81,11 +81,8 @@ def _client() -> genai.Client:
     return genai.Client(api_key=key)
 
 
-def ask(prompt: str, purpose: str = "") -> str:
-    """Send one prompt to the model, return the plain-text answer (metered)."""
-    resp = _client().models.generate_content(model=MODEL, contents=prompt)
-
-    # Meter the call from the provider's own usage report (never our estimate).
+def _meter(resp, purpose: str) -> None:
+    """Record one call from the provider's own usage report (never our estimate)."""
     usage = getattr(resp, "usage_metadata", None)
     tokens_in = getattr(usage, "prompt_token_count", 0) or 0
     tokens_out = (getattr(usage, "candidates_token_count", 0) or 0) + (
@@ -101,4 +98,26 @@ def ask(prompt: str, purpose: str = "") -> str:
         )
     )
 
+
+def ask(prompt: str, purpose: str = "") -> str:
+    """Send one prompt to the model, return the plain-text answer (metered)."""
+    resp = _client().models.generate_content(model=MODEL, contents=prompt)
+    _meter(resp, purpose)
+    return (resp.text or "").strip()
+
+
+def ask_with_image(prompt: str, image_bytes: bytes, mime_type: str = "image/png",
+                   purpose: str = "") -> str:
+    """Send one prompt PLUS one image to the model (vision), metered like any call.
+
+    Same one-door rule: ingestion's photo captioning calls this, never the
+    provider directly — the Bedrock/Claude swap stays a one-file change.
+    """
+    from google.genai import types
+
+    resp = _client().models.generate_content(
+        model=MODEL,
+        contents=[types.Part.from_bytes(data=image_bytes, mime_type=mime_type), prompt],
+    )
+    _meter(resp, purpose)
     return (resp.text or "").strip()

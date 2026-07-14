@@ -82,6 +82,38 @@ class VectorStore:
         logger.info("Embedded %d PDF chunk(s) for %s/%s", len(chunks), company_id, file_id)
         return len(chunks)
 
+    def store_photo_captions(self, company_id: str, file_id: str,
+                             photos: list[dict]) -> int:
+        """Embed + store one chunk per photo CAPTION, so meaning-search can find
+        a product by how it LOOKS ("gold hoop earrings"), not only by its row
+        text. Each chunk points home to its sheet + row + extracted photo file.
+
+        Replaces only this file's photo-caption chunks; the row chunks written
+        by store_workbook are untouched. (After a re-ingest, store_workbook's
+        wholesale delete removes caption chunks too — re-run this after it.)
+        """
+        self.collection.delete(where={"$and": [
+            {"company_id": company_id}, {"file_id": file_id},
+            {"kind": "photo-caption"},
+        ]})
+        good = [p for p in photos
+                if p.get("caption") and not str(p["caption"]).startswith("(caption failed")]
+        if good:
+            self.collection.add(
+                ids=[f"{company_id}/{file_id}/photo/{p['sheet']}/r{p['row']}/{i}"
+                     for i, p in enumerate(good)],
+                documents=[str(p["caption"]) for p in good],
+                metadatas=[{
+                    "company_id": company_id, "file_id": file_id,
+                    "sheet": str(p["sheet"]), "row": int(p["row"]),
+                    "photo_path": str(p.get("path", "")),
+                    "kind": "photo-caption",
+                } for p in good],
+            )
+        logger.info("Embedded %d photo caption(s) for %s/%s",
+                    len(good), company_id, file_id)
+        return len(good)
+
     def search(self, query: str, company_id: str | None = None,
                file_id: str | None = None, k: int = 5) -> list[dict]:
         """Semantic search. Returns the top-k chunks with their pointer-home metadata."""

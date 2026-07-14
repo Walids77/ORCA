@@ -2,6 +2,40 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-14 — Session 20: P&L final exam passed (Layer 1 closed) + PHOTOS end-to-end
+> Parser internals stay private (see `private/`); this entry records method + measured results.
+- **Hidden rows / columns / sheets detection** (Session-19 carry-over): the structure survey now
+  reports anything the file's author hid — hidden usually means "ignore me", and the report names
+  the hidden columns by their headers. Proof on the real corporate workbook: its two hidden data
+  columns' own header text literally reads **"to be hidden"**. Hidden-but-EMPTY columns correctly
+  stay silent. Regression net: 10/11 files byte-identical, the 11th gained exactly the predicted
+  warning; a mutated copy (2 hidden rows + 1 hidden column + 1 hidden sheet) reported all three.
+- **The finance final exam:** a generated income statement (plain values, indented sections, bare
+  year numbers as headers, profit rows that are *differences*). First run exposed 4 real gaps —
+  including a cascade (one uncaught computed row poisoned the next total's detection) — fixed by
+  3 levers: years count as header labels · a label-gated profit pass (chain + difference, and the
+  math must hold in EVERY number column — a rule added after a genuine numeric coincidence tried
+  to mark the Income Tax row) · nearest-rows sum matching. **Final: all six computed rows caught,
+  header + year columns right, full regression net + mutation suite clean. Layer 1 CLOSED.**
+  Eval record: `eval/surveyor_pl_final_exam_2026-07-14.md`.
+- **PHOTOS — the full chain in one session** (two real supplier workbooks as the eval set):
+  photos float on Excel's *drawing layer* anchored to cells — cell readers are blind to them.
+  Built: extraction from the workbook's own drawing XML (**the standard library route silently
+  drops WMF/EMF images — on one real file that was 57 of 100 photos**; old vector formats now
+  convert to PNG); row-tagging by the most-covered-row rule with an AMBIGUOUS flag on ties and a
+  decoration flag for logos (3/3 predictions on a purpose-built trap workbook); one factual
+  vision-model caption per photo through the metered one-file LLM adapter (**131/131 photos,
+  0 failures, ≈$0.20 would-be cost — actual $0 on free tier**); and store wiring — an
+  `orca_photos` SQL table joined to any sheet row by its Excel row number + captions as
+  meaning-searchable chunks. **End-to-end proofs on both files:** a Reference lookup returns the
+  right photo + caption; meaning-search on a look-description lands on the right row's
+  photo; a file purge wipes its photo records too (the standing re-upload policy, proven live).
+- Still owed: the brain's planner doesn't *return* photos yet (the stores can); photo lookup +
+  its known-answer eval ride with the brain work after the gate.
+- **Next session: (a) a written plain-English review of everything now in hand, walked through
+  together; (b) gate LAYER 2 — the LLM studies the surveyor's structural map (not the raw cells)
+  and names each region's meaning.**
+
 ## 2026-07-14 — Session 19: the surveyor hardened by three eval rounds — Layer 1 closed
 > Parser internals stay private (see `private/`); this entry records method + measured results.
 - **Scouted the research for the Excel shapes that exist in the wild** (the DECO/Enron corpus:
