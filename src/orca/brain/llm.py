@@ -99,9 +99,19 @@ def _meter(resp, purpose: str) -> None:
     )
 
 
-def ask(prompt: str, purpose: str = "") -> str:
-    """Send one prompt to the model, return the plain-text answer (metered)."""
-    resp = _client().models.generate_content(model=MODEL, contents=prompt)
+def ask(prompt: str, purpose: str = "", temperature: float | None = None) -> str:
+    """Send one prompt to the model, return the plain-text answer (metered).
+
+    temperature: the model's randomness dial. None = provider default; 0.0 =
+    always the most likely answer — used by steps whose verdicts must
+    REPRODUCE run after run (the no-lucky-passes rule), e.g. gate Layer 2.
+    """
+    config = None
+    if temperature is not None:
+        from google.genai import types
+
+        config = types.GenerateContentConfig(temperature=temperature)
+    resp = _client().models.generate_content(model=MODEL, contents=prompt, config=config)
     _meter(resp, purpose)
     return (resp.text or "").strip()
 

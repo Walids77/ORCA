@@ -2,6 +2,42 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-15 — Session 21: gate LAYER 2 — the LLM names each table's meaning + the glued-table check
+> Parser internals stay private (see `private/`); this entry records method + measured results.
+- Opened with a **written plain-English review of the whole system** (the doorway, the
+  structure survey, the 3 stores, hybrid search, the CPU, the guardrails, what's missing) —
+  the owner re-caught the full picture before building more.
+- **Gate Layer 2 built:** the LLM receives Layer 1's STRUCTURAL MAP (column profiles, row
+  counts, flags, a few sample rows — never the raw file) and returns a strict JSON form:
+  one meaning line per sheet (drafts the catalog meanings the planner reads), one per
+  region, and the **glued-table check** — is this block ONE table, or TWO different tables
+  stuck together with no blank space between them? Code cannot see that wall (proven by the
+  Session-19 mutation test); meaning can. The LLM only *reports* a suspected glue point —
+  the user decides at the gate (Layer 3). All calls run through the metered one-file
+  adapter at temperature 0.
+- **Eval (predictions written before each run):** 3 glued-table dummies — vertically glued
+  (2nd header mid-block), side-by-side glued, and a one-table-with-subtotals trap — all
+  correct AND reproducible (4/4 · 4/4 · 3/3 runs); real files: meanings match the
+  hand-written catalog lines, **0 false splits**, and a seam alert on a sparse optional
+  column was correctly judged "one table" (the false-positive guard works).
+- **Two failures became the levers** (each from a failing run): (1) gluing poisons the
+  column profiles themselves → judge columns by MAJORITY type and flag deviating rows;
+  (2) the side-by-side verdict FLIPPED between identical runs even at temperature 0 →
+  cured by the planner's own philosophy: one FOCUSED question per suspect seam, with the
+  facts pre-computed by our code (the LLM judges meaning, never re-derives arithmetic).
+- **The find chain paid off same-day:** Layer 2's readings exposed 14 phantom mini-tables
+  on the real retail Sales sheet; the owner confirmed those columns belong to the main
+  table = a failing eval on real data → **Layer 1 merge lever** (a block completely inside
+  another block's rectangle is a bay, not an island). Proof: 12/12 dummy shapes
+  byte-identical (side-by-side neighbours correctly survived), 4 real files deletion-only
+  (retail −14 fragments → Sales = ONE table; stock −4; order −1; corporate −22), Layer 2
+  re-run clean with reading cost −40%. Eval record: `eval/gate_layer2_meanings_2026-07-15.md`.
+- LLM adapter: `ask()` gains an optional **temperature** setting (0 = reproducible
+  verdicts, the no-lucky-passes rule applied to prompts).
+- **Next session: gate LAYER 3 — the fix-or-proceed report** (3 tiers: BLOCK · fix-or-
+  proceed · warn+proceed; never reject a file, never ingest silently) **+ the reading card**
+  (user confirmations saved and re-used on every re-upload).
+
 ## 2026-07-14 — Session 20: P&L final exam passed (Layer 1 closed) + PHOTOS end-to-end
 > Parser internals stay private (see `private/`); this entry records method + measured results.
 - **Hidden rows / columns / sheets detection** (Session-19 carry-over): the structure survey now
