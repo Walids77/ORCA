@@ -2,6 +2,42 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-16 — Session 22: gate LAYER 3 — the fix-or-proceed gate + the reading card (ingest gate CLOSED)
+> Parser internals stay private (see `private/`); this entry records method + measured results.
+- **Gate Layer 3 built** — the last ingest-gate layer. It folds Layer 1 (structure) and
+  Layer 2 (meanings + glued-table verdicts) into ONE decision the user makes. Design (locked
+  with the owner): **one gate, three exits** — **unreadable** (no real table anywhere → stop,
+  say why, never ingest) · **clarify** (some findings need the user → a short plain-English
+  question list, answered by yes/no, then ingest — where most files land) · **all clear**
+  (nothing to ask → ingest). The user only ever sees a plain list, never a severity label:
+  code decides what needs asking, the LLM is never the gate.
+- **Face-value rule kept:** ORCA observes a fact and never changes it unless the user says so
+  — a block that *might* be two tables stays ONE until the user confirms "split." Two flavours
+  of question: **answer-and-go** (split? / treat as total? / which header row? / meaning right?
+  — we apply the reply, no file edit) and **source-is-broken** (rare — e.g. a tool-saved file
+  with blank totals: we still offer "proceed anyway" and suggest the fix; editing is optional,
+  never a wall). Only an unreadable file is ever refused.
+- **The reading card:** confirmations saved per **(owner, filename)** and keyed by the
+  **question**, so on re-upload we reuse a saved answer whose question reappears, **drop** one
+  whose question is gone (obsolete → erased), and ask only the genuinely new questions. A
+  different file under the same name raises different questions → the whole old card prunes
+  itself, no "is this a different file?" check needed. Filename (not a content hash) is the key
+  on purpose — it's the identity that survives an edit.
+- **Eval — 4 scenarios, all pass:** unreadable dummy → refused with reason · first upload of a
+  glued file → 2 questions, answered, card saved · same file again → 0 re-asked (all reused) ·
+  a *different* file copied over the same name → old answers auto-pruned, fresh questions asked
+  (the saved card afterward held only the new file's answers).
+- **Industry check (web, July 2026):** the mainstream RAG-for-Excel stack ingests **silently**
+  — parse → chunk → embed, no feedback to the uploader; their own docs admit parser errors
+  return "plausible but incorrect passages" and "formula blindness." Human-in-the-loop, where
+  it exists, is a back-office **reviewer GUI for forms** (invoices/IDs), not the file owner
+  being asked what a sheet means. Extraction runs **50–70% out of the box → HITL past 95%**.
+  Nobody mainstream does observe → ask-the-uploader → remember → proceed for messy business
+  Excel — this gate is ORCA's differentiator, confirmed from the outside.
+- **Next session: close the loop** — wire the gate's confirmed answers into the real pipeline
+  (confirmed meaning → the planner's catalog; confirmed split → the SQL/vector stores), then
+  prove one real question end-to-end: gate → catalog → stores → answer.
+
 ## 2026-07-15 — Session 21: gate LAYER 2 — the LLM names each table's meaning + the glued-table check
 > Parser internals stay private (see `private/`); this entry records method + measured results.
 - Opened with a **written plain-English review of the whole system** (the doorway, the

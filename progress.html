@@ -201,7 +201,7 @@
 <body>
 
 <h1>🐋 ORCA — Progress</h1>
-<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 15, 2026</strong></p>
+<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 16, 2026</strong></p>
 
 <!-- ============ HERO: WHERE ORCA STANDS ============ -->
 <div class="dash">
@@ -495,8 +495,12 @@
     Session 20 passed the finance FINAL EXAM (a P&amp;L with profit rows = differences) after
     3 more levers — Layer 1 is now CLOSED for real. Session 21 built gate LAYER 2:</strong>
     the LLM reads the structural map and names each table's meaning + the glued-table
-    check — eval-proven and reproducible; next: gate Layer 3, the fix-or-proceed report
-    + the reading card.</p>
+    check — eval-proven and reproducible. Session 21 built gate LAYER 2; <strong>Session 22
+    built gate LAYER 3 — the whole ingest gate is now closed:</strong> one gate with three
+    exits (unreadable / clarify-list / all-clear) + a reading card that remembers the user's
+    answers and self-cleans on re-upload. Industry-checked: the mainstream ingests Excel
+    silently with no uploader feedback — ORCA's ask-and-remember gate is the differentiator.
+    Next: wire the confirmed answers into the actual ingestion (gate → catalog → stores → answer).</p>
   </div>
 </div>
 
@@ -511,7 +515,7 @@
     <div class="stepline"></div>
     <div class="step"><div class="num" style="background:var(--done-bg);color:var(--done);border:1.5px solid var(--done)">2</div><div class="txt"><b>The LLM names the MEANING</b> <em>(built + eval'd ✓ S21)</em><br><span>fed the clean structural map, not the raw cells — so it’s cheap ($0.002–0.03 a workbook). “Each row is one sale to a client, with amount, date and payment method.” It never touches the numbers; our code still extracts and calculates. Drafts the sheet-meanings file as <b>proposals</b> (nothing final until the user confirms at the gate) — plus the <b>glued-table check</b>: is this block ONE table, or TWO stuck together with no blank space between them? Code can’t see that wall; meaning can. Eval: glued-below · glued-side-by-side · a subtotal trap — all correct and <b>reproducible</b> (the flaky side-by-side verdict was cured by asking one FOCUSED question per suspect seam, facts pre-computed by our code); real files: meanings match the hand-written catalog, zero false splits. Bonus find: Layer 2’s readings exposed 14 phantom mini-tables on the real Sales sheet → a Layer-1 <b>merge lever</b> (a block inside another block’s rectangle is a bay, not an island), regression-proven on 17 files</span></div></div>
     <div class="stepline"></div>
-    <div class="step"><div class="num" style="background:var(--now-bg);color:var(--now);border:1.5px solid var(--now)">3</div><div class="txt"><b>The gate report — fix or proceed</b> <em>(next)</em><br><span>never reject a file, never ingest silently. <b>Block</b> only if nothing is readable · <b>fix-or-proceed</b> for anything that would make ORCA confidently <em>wrong</em> · <b>warn</b> for anything that only makes answers worse. The user’s confirmations are saved as the file’s <b>reading card</b> and re-used on every re-upload</span></div></div>
+    <div class="step"><div class="num" style="background:var(--done-bg);color:var(--done);border:1.5px solid var(--done)">3</div><div class="txt"><b>The gate — fix or proceed</b> <em>(built + eval'd ✓ S22)</em><br><span>never reject a file, never ingest silently. One gate, <b>three exits</b>: <b>unreadable</b> → stop and say why (only a file with no real table anywhere is refused) · <b>clarify</b> → a short plain-English question list the user answers by yes/no — where most files land · <b>all clear</b> → ingest. The user only ever sees a simple list, never a severity label. Face-value rule: a block that <em>might</em> be two tables stays ONE until the user says split. The confirmations are saved as the file’s <b>reading card</b> (keyed by filename + the question) and re-used on every re-upload — obsolete answers self-prune, so a changed file only re-asks what actually changed. Eval: unreadable · first-upload · same-file re-upload (0 re-asked) · different file, same name (old card auto-erased) — all pass</span></div></div>
   </div>
   <p style="margin-top:.7rem;color:var(--muted);font-size:.88rem">Why a human gate at all? The best <em>published</em> spreadsheet table detection scores <b>78.9%</b> — about one table in five gets its boundaries wrong. Nobody can fully automate this yet. And the industry-standard library, tested head-to-head on the same sheet, returned <b>879 rows, 47,081 empty cells and 304&nbsp;KB of HTML</b> where we return 23 clean rows. This is ORCA's differentiator, and it closes three roadmap items at once (data-quality advisor · notification gate · clarify-with-the-user).</p>
 </div>
