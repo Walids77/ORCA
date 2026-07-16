@@ -2,6 +2,42 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-16 — Session 23: the gate's answers WIRED into real ingestion + the first cross-file eval on 3 real workbooks
+> Parser internals stay private (see `private/`); this entry records method + measured results.
+- **The loop is CLOSED.** Until today the ingest gate collected the owner's answers and then
+  did nothing with them; the stores were still fed by the old Session-2 extractor. Now the
+  answers take real effect: a **confirmed sheet meaning flows into the catalog** the planner
+  reads (and when a sheet already has a hand-tuned meaning, the gate shows THAT text for
+  confirmation — never the LLM's fresh draft, so a quick "Enter" can never degrade it), and a
+  **new private converter applies the other answers to extraction**: "yes, split" really
+  splits a glued block (stacked or side-by-side), confirmed plain-number totals are flagged
+  (never re-summed), corrected header rows are used, hidden columns stay out unless waved in.
+  Gated storing is **opt-in** for now — the new path must beat the old one eval-first before
+  it becomes the default (our own migration rule).
+- **Two proofs on dummies:** a split invoice/staff file came out as two correct tables and
+  the invoice Amount column — which the glued profile had poisoned into TEXT — was re-measured
+  back to a real number column (SUM matched the hand-computed ground truth to the cent). A
+  finance-statement dummy stored 17 rows with all 6 computed rows (subtotals/profits) flagged.
+- **End-to-end on 3 REAL retail workbooks** (all data local/git-ignored): two brands' sales
+  workbooks + a 55MB stock file (583 items, photos, hidden columns — the owner chose to keep
+  them out). Ingest proof: the stock items sum to exactly the sheet's own printed total.
+  ORCA answered the owner's business questions (best month per brand, year-vs-year totals,
+  top-10 sold items) and — reading at face value — **exposed real bugs in the files
+  themselves**: one workbook's monthly summary formulas from mid-year onward each sum to the
+  END of the sheet (every later month double-counted; the owner confirmed the miscalculation),
+  plus year-1900 typo dates and a text date invisible to date filters.
+- **Two brain levers, both born from a FAILING cross-file eval** (prediction written first):
+  with two workbooks holding identically-named sheets, a question about brand B was answered
+  with brand A's number — **confidently wrong**. Lever 1: the numbers form gains a **"file"**
+  field; our code resolves (sheet, file) and **refuses with the file list when ambiguous**
+  (an honest error beats a wrong-file answer). Lever 2: the planner was shortening steps and
+  losing the company name → rule added: **every step's question is self-contained** and
+  repeats the brand/file it is about. Single-file behavior is unchanged by design; re-running
+  the full known-answer eval to prove zero regression is next session's first check.
+- **Data lesson (the owner's own call):** item-level "best sellers" need an SKU/reference
+  column in the source — ORCA reports what the data can and cannot answer and stops; no
+  patching around weak files.
+
 ## 2026-07-16 — Session 22: gate LAYER 3 — the fix-or-proceed gate + the reading card (ingest gate CLOSED)
 > Parser internals stay private (see `private/`); this entry records method + measured results.
 - **Gate Layer 3 built** — the last ingest-gate layer. It folds Layer 1 (structure) and

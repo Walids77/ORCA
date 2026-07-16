@@ -133,6 +133,11 @@ def make_planner_node(menu: str, doc_list: str):
             '{step 1}?" with "waits_for": [1].\n'
             "- Each step's question must be plain and focused — one "
             "figure/lookup per step.\n"
+            "- Each step's question must be SELF-CONTAINED: if the user names "
+            "a company/brand/file (e.g. \"Acme\", \"the north branch\"), REPEAT "
+            "that name inside every step's question. The step runs alone — a "
+            "step that just says \"the sales\" cannot know whose sales, and "
+            "several files hold sheets with the same names.\n"
             "- A ratio/average-per/growth/projection question that the data "
             "does not hold as a ready column = numbers steps for each raw "
             "figure, then ONE calculate step. The calculate step adds "

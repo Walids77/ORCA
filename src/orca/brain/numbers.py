@@ -129,6 +129,7 @@ def plan_query(question: str, menu: str) -> dict:
         "LIST of matching rows, reply with ONLY a JSON object (no prose, no "
         "code fences) in this shape:\n"
         '{"needed": true, "sheet": "<sheet name from the catalog>", '
+        '"file": "<file id from the catalog>", '
         '"operation": "SUM"|"AVG"|"MIN"|"MAX"|"COUNT"|"LIST", '
         '"column": "<column to aggregate, or null for COUNT of rows / LIST>", '
         '"filters": [{"column": "<column>", "op": "="|"!="|">"|">="|"<"|"<="|"contains", '
@@ -137,6 +138,10 @@ def plan_query(question: str, menu: str) -> dict:
         '"columns": ["<for LIST only: which columns to show>"]}\n\n'
         "Rules:\n"
         "- Use ONLY sheet and column names that appear in the catalog, exactly as written.\n"
+        "- Several files can hold a sheet with the SAME name (e.g. two companies' "
+        "workbooks both have \"Summary\") — \"file\" says WHICH file you mean; copy "
+        "the file id exactly as the catalog shows it. Match it to the company/file "
+        "the question is about.\n"
         "- Dates are stored as ISO text like 2026-05-28T00:00:00 — to filter a month, "
         "use op \"contains\" with e.g. \"2026-05\".\n"
         "- For \"best/top X by ...\" questions, use group_by on the label column and "
@@ -175,9 +180,25 @@ def run_plan(sql: SqlStore, catalog: list[dict], plan: dict) -> dict:
     if not plan.get("needed"):
         return {"needed": False}
 
-    entry = next((e for e in catalog if e["sheet"] == plan.get("sheet")), None)
-    if entry is None:
-        return {"needed": True, "error": f"unknown sheet {plan.get('sheet')!r}"}
+    # Resolve sheet -> catalog entry. Two files may share a sheet name (both
+    # workbooks have a "Summary"), so the form's "file" disambiguates. With no
+    # file given: a single match is used; several matches = REFUSE and say so
+    # (an honest error beats confidently answering from the wrong company's
+    # file — the Session-23 cross-file eval failure).
+    matches = [e for e in catalog if e["sheet"] == plan.get("sheet")]
+    wanted_file = str(plan.get("file") or "").strip()
+    if wanted_file:
+        matches = [e for e in matches if e["file_id"] == wanted_file]
+    if not matches:
+        return {"needed": True,
+                "error": f"unknown sheet {plan.get('sheet')!r}"
+                         + (f" in file {wanted_file!r}" if wanted_file else "")}
+    if len(matches) > 1:
+        files = ", ".join(e["file_id"] for e in matches)
+        return {"needed": True,
+                "error": f"sheet {plan.get('sheet')!r} exists in several files "
+                         f"({files}) — the plan must say which file"}
+    entry = matches[0]
     col_map = entry["col_map"]
 
     op = str(plan.get("operation", "")).upper()
@@ -236,6 +257,7 @@ def run_plan(sql: SqlStore, catalog: list[dict], plan: dict) -> dict:
     return {
         "needed": True,
         "sheet": entry["sheet"],
+        "file": entry["file_id"],      # WHOSE data answered (Session 23)
         "computed": measure,
         "filters": applied_filters,
         "group_by": group_by,
@@ -251,7 +273,8 @@ def result_text(result: dict) -> str:
         return ""
     if result.get("error"):
         return f"(numbers leg could not compute: {result['error']})"
-    parts = [f"Computed from sheet \"{result['sheet']}\" (Total rows excluded): {result['computed']}"]
+    parts = [f"Computed from sheet \"{result['sheet']}\" of file "
+             f"\"{result.get('file', '?')}\" (Total rows excluded): {result['computed']}"]
     if result["filters"]:
         parts.append(f"filtered by {'; '.join(result['filters'])}")
     if result.get("group_by"):
