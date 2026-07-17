@@ -201,7 +201,7 @@
 <body>
 
 <h1>🐋 ORCA — Progress</h1>
-<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 16, 2026</strong></p>
+<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 18, 2026</strong></p>
 
 <!-- ============ HERO: WHERE ORCA STANDS ============ -->
 <div class="dash">
@@ -506,8 +506,17 @@
     live business questions AND exposed real bugs in the files themselves. The first cross-file
     eval failed exactly as predicted (two files share sheet names → wrong-file answer) and
     bought two brain levers: the numbers form now says WHICH FILE (ambiguous = honest refusal,
-    never a guess) and every plan step repeats the company name. Next: re-run the full
-    15-question eval to prove the levers regress nothing.</p>
+    never a guess) and every plan step repeats the company name.
+    <strong>Session 24 delivered ORCA's first REPEATED 15/15</strong> — the regression check found
+    one lever side effect (the planner pasted a document's full title into text steps, drowning
+    the keyword search in the title's own common words) and fixed it the code-certain way: the
+    planner now only ever sees SHORT document names, so it cannot paste a title it never saw.
+    Then the <strong>gate sat its first duel</strong> — same file, same 15 questions through the gate
+    door: every stored sum exact to the cent, but 13/15 → <strong>the gate stays opt-in</strong>. The
+    two lost points are a BRAIN seam (the numbers form flips between "find the max month" and
+    "list all months"; A/B measured: old-door store 5/5, gate store 2/5). Next: numbers-form
+    stabilization (few-shot · temperature 0 · list-dump guard) → duel rematch → the multi-file
+    eval shape.</p>
   </div>
 </div>
 
@@ -586,6 +595,10 @@
 <h2>📓 Session log — click a session to read it</h2>
 
 <details class="session" open>
+  <summary>Jul 17–18 · Session 24 <span class="when">first repeated 15/15 + the title-injection fix + the gate's first duel (13/15 — stays opt-in)</span></summary>
+  <p>The session Session 23 ordered: re-run the full 15-question eval and prove the two cross-file levers regress nothing. Getting a fair exam took three attempts — the first run graded 11/15 against a store still holding <em>both</em> brands' books (questions that never name a company became genuinely ambiguous, so the new refuse-instead-of-guess lever fired — partly by design), and the second against a different <em>edition</em> of the workbook than the answer key was built on. That one was caught by the owner himself: told his invoices total had a bug, he challenged the number against his own file and was right — we were reading the newer live workbook, he was reading the eval file. (The live file does carry its own real bug — its invoices Total formula stops at March — but that's <em>its</em> bug, and his to fix at the source.) On the true baseline: <b>12/15, numbers a perfect 6/6</b>, average basket to the cent. The one repeating fail then got the full hunt, and the root cause was a lever side effect: the "every step repeats the name" rule made the planner expand "the survey" into the document's <b>full ALL-CAPS title</b> inside the step's question — and a title is made of the document's own commonest words, so both searches flooded toward title-echoing chunks and the answer chunk (whose section heading literally <em>is</em> the answer) fell out of the top twenty. Five of six logged runs injected the title and failed; the one short question passed. A polite prompt rule ("don't do that") failed 0/4 — so the fix went in the code-certain way, the same fence-the-input philosophy as the RBAC filter: the planner's document list now shows only <b>short file names</b>, never titles. <b>You can't paste what you never saw.</b> Result: <b>15/15 — and then 15/15 again. The first repeated perfect run in ORCA's history</b>, and the day's fastest and cheapest runs too. Then the owner called the big match: <b>the gate's first duel.</b> Same file, same exam, but ingested through the gate door — six meaning confirmations (a press of Enter each), every stored sum matching the sheet's printed totals to the cent, printed total rows dropped rather than flagged, three never-typed template rows excluded. Score: <b>13/15 — the gate loses, and by the standing migration rule it stays opt-in.</b> But the post-mortem is the real prize: the two lost points are <em>not the gate's data</em> — they're a brain seam. The numbers form, asked "which month was highest," sometimes answers by listing all the months instead of picking the winner, and that row-dump then poisons the dependent step's question. A controlled A/B — five runs per store, same brain — measured old-door 5/5 vs gate 2/5, with the only prompt difference being four row-count digits: the form sits on a knife's edge at default temperature. The cure is already on the books (the Session-21 pattern: focused question, temperature 0, plus a guard so a list-dump never enters a question). Next session: stabilize the form → rematch the duel → the multi-file eval shape.</p>
+</details>
+<details class="session">
   <summary>Jul 16 · Session 23 <span class="when">the gate's answers wired into REAL ingestion + the first cross-file eval on 3 real workbooks</span></summary>
   <p>The session the gate stopped being a rehearsal. Until today its questions and reading card led nowhere — the stores were still fed by the old Session-2 extractor, blind to everything the surveyor knows. Now the loop is <b>closed</b>: a confirmed sheet meaning flows into the catalog the planner reads (and when a sheet already <em>has</em> a hand-tuned meaning, the gate shows THAT text to confirm — never the LLM's fresh draft, so a quick "Enter" can never quietly replace a rich meaning with a thin one), and a new private converter applies the other answers to the actual extraction: <b>"yes, split"</b> really produces two tables (stacked or side-by-side) · a confirmed <b>plain-number total</b> is flagged and never re-summed · a corrected <b>header row</b> is used · <b>hidden columns</b> stay out unless waved in · a tool-saved file is politely NOT ingested until re-saved. Two dummy proofs first (the split file's poisoned text-column was re-measured back into a real number column — its SUM then matched the hand-computed truth to the cent), then the real thing: <b>three real workbooks through the whole chain</b> — the two brands' books plus the 55&nbsp;MB stock file — and the stored stock rows summed to <em>exactly</em> the sheet's own printed total. Reading at face value, ORCA also caught the files' own bugs: one brand's monthly summary formulas from mid-year onward each sum <b>to the end of the sheet</b> (every later month double-counted — the owner confirmed the miscalculation), plus year-1900 typo dates and a date typed as text. Then the first <b>cross-file eval</b>, prediction written first: with two workbooks holding identically-named sheets, a question about brand B was answered with brand A's number — <em>confidently wrong, exactly as predicted</em>. Two levers, each from that failing eval: the numbers form gained a <b>"file"</b> field and our code refuses with the candidate list when it's ambiguous (an honest "say which file" beats a wrong-file answer), and the planner earned a rule that every step's question is <b>self-contained</b> — it repeats the company name, because a step that just says "the sales" cannot know whose. After the levers: best-month, year-vs-year and top-10-items questions all answered from the right files, reproducibly. The owner's own verdict closed the session: item-level "best sellers" need an SKU column in the <em>source</em> — ORCA reports what the data can't answer and stops; no patching around weak files. Next session opens by re-running the full 15-question eval to prove the two levers regress nothing.</p>
 </details>

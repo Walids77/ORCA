@@ -2,6 +2,38 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-17/18 — Session 24: first REPEATED 15/15 + the title-injection fix + the gate's first duel
+- **Session goal (from S23): prove the two cross-file levers regress nothing.** Verdict earned
+  the hard way — the first two eval runs weren't comparable (the stores still held the S23
+  multi-file state, then a different edition of the workbook than the answer key was built on;
+  the owner caught the mismatch by challenging a figure against his own file). On the true
+  baseline: **12/15**, numbers **6/6** incl. the average basket to the cent.
+- **Root cause of the one repeating text fail, traced with logged runs:** the S23
+  "self-contained steps" rule made the planner expand "the survey" into the document's FULL
+  ALL-CAPS TITLE inside the step question. A title is made of the document's own commonest
+  words — keyword AND meaning search flooded toward title-echoing chunks and the answer chunk
+  (whose section heading literally IS the answer) fell out of the top 20. Five of six logged
+  runs injected the title and failed; the one short-question run passed.
+- **The fix is code-certain, not prompt-begging** (a prompt-only rule failed 0/4): the
+  planner's searchable-documents list is now built from **short file ids** (`agentic_rag_survey`),
+  never full titles — **the LLM cannot paste a title it never saw** (the same fence-the-input
+  philosophy as the RBAC catalog filter). Result: **15/15, then 15/15 again — ORCA's first
+  repeated perfect run** (the S16 15/15 never reproduced), and the day's fastest/cheapest runs.
+- **The gate's first duel** (owner's call: same file, same 15 questions, the gate door).
+  Gate ingest: readable · 6 meaning confirmations (tuned defaults kept) · every stored sum
+  matches the sheet's printed totals to the cent · printed total rows dropped instead of
+  flagged · 3 never-typed template rows excluded. **Score 13/15 → the gate stays OPT-IN**
+  (the migration rule: it must beat the old door first).
+- **The duel's blocker is a BRAIN seam, not the gate's data.** The numbers form sometimes
+  answers "which month was highest" with LIST-all-months instead of MAX, and the multi-row
+  dump then poisons the dependent step's question. **A/B, 5 runs per store, same brain:**
+  old-door store 5/5 · gate store 2/5 — the only prompt difference is four row-count digits,
+  tipping a form that runs at default temperature. Same instability class Session 21 cured
+  with a focused question at temperature 0.
+- **Next session:** numbers-form stabilization (few-shot examples · temperature 0 · a guard
+  so a LIST dump is never pasted into a next step's question) → gate duel rematch → the
+  multi-file eval shape (questions that name the company + refusal traps).
+
 ## 2026-07-16 — Session 23: the gate's answers WIRED into real ingestion + the first cross-file eval on 3 real workbooks
 > Parser internals stay private (see `private/`); this entry records method + measured results.
 - **The loop is CLOSED.** Until today the ingest gate collected the owner's answers and then

@@ -89,14 +89,18 @@ def build_brain(
         # design has its own stations, so it draws its own map and returns.
         menu_catalog = load_catalog(sql, company_id, allowed_files)
         menu = catalog_text(menu_catalog)
-        doc_titles = sorted({
-            (c.get("metadata") or {}).get("doc_title")
+        # Short file ids, NOT full doc titles: a long title is made of the
+        # document's own commonest words — if the planner ever pastes it into
+        # a step's question it drowns the keyword search (Session-24 find).
+        # The planner can't leak a title it never saw.
+        doc_names = sorted({
+            (c.get("metadata") or {}).get("file_id")
             for c in text_searcher.chunks
-            if (c.get("metadata") or {}).get("doc_title")
+            if (c.get("metadata") or {}).get("file_id")
             and (allowed_files is None
                  or (c.get("metadata") or {}).get("file_id") in allowed_files)
         })
-        doc_list = "\n".join(f"- {t}" for t in doc_titles) or "- (uploaded documents)"
+        doc_list = "\n".join(f"- {t}" for t in doc_names) or "- (uploaded documents)"
         road_map.add_node("planner", make_planner_node(menu, doc_list))
         road_map.add_node("run_wave",
                           make_plan_runner_node(text_searcher, sql,
@@ -127,14 +131,16 @@ def build_brain(
         # parallel when the lane is "both".
         menu = catalog_text(load_catalog(sql, company_id, allowed_files))
         # Same RBAC fence on the text-document list the router sees.
-        doc_titles = sorted({
-            (c.get("metadata") or {}).get("doc_title")
+        # Short file ids, not full titles — same Session-24 reason as the
+        # planner design above.
+        doc_names = sorted({
+            (c.get("metadata") or {}).get("file_id")
             for c in text_searcher.chunks
-            if (c.get("metadata") or {}).get("doc_title")
+            if (c.get("metadata") or {}).get("file_id")
             and (allowed_files is None
                  or (c.get("metadata") or {}).get("file_id") in allowed_files)
         })
-        doc_list = "\n".join(f"- {t}" for t in doc_titles) or "- (uploaded documents)"
+        doc_list = "\n".join(f"- {t}" for t in doc_names) or "- (uploaded documents)"
         road_map.add_node("router", make_router_node(menu, doc_list))
         road_map.add_edge(START, "router")
 
