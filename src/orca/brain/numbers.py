@@ -144,8 +144,10 @@ def plan_query(question: str, menu: str) -> dict:
         "the question is about.\n"
         "- Dates are stored as ISO text like 2026-05-28T00:00:00 — to filter a month, "
         "use op \"contains\" with e.g. \"2026-05\".\n"
-        "- For \"best/top X by ...\" questions, use group_by on the label column and "
-        "SUM (or COUNT) on the measure.\n"
+        "- RANKING questions — \"which X was highest/lowest/best/worst\" or "
+        "\"top X by ...\" — use group_by on the label column and SUM (or COUNT) "
+        "on the measure. NEVER answer a ranking question with LIST: the asker "
+        "wants ONE winner, not the rows.\n"
         "- For \"show me / list the rows that ...\" questions, use operation LIST "
         "with filters, and name the useful columns in \"columns\".\n"
         "- Questions asking WHAT was bought/sold/mentioned (not how much) are "
@@ -156,9 +158,27 @@ def plan_query(question: str, menu: str) -> dict:
         '{"needed": false} rather than guessing a wrong column.\n'
         "- If the question does NOT need a computed number or row list from this "
         'data, reply with ONLY: {"needed": false}\n\n'
+        # Session 25 few-shot examples (the S17 lever, built after the S24 duel):
+        # one worked example on EACH side of the ranking-vs-list boundary, with
+        # made-up names so they can never be copied as real sheet/column names.
+        "Examples (imaginary catalog — always use the REAL catalog below):\n"
+        "Q: \"Which month had the highest revenue?\" (sheet \"Overview\" has "
+        "Month (text), Revenue (number))\n"
+        'A: {"needed": true, "sheet": "Overview", "file": "shopdata", '
+        '"operation": "SUM", "column": "Revenue", "filters": [], '
+        '"group_by": "Month", "columns": null}\n'
+        "Q: \"Show me the purchases of April 2025\" (sheet \"Purchases\" has "
+        "Date (text), Item (text), Price (number))\n"
+        'A: {"needed": true, "sheet": "Purchases", "file": "shopdata", '
+        '"operation": "LIST", "column": null, "filters": [{"column": "Date", '
+        '"op": "contains", "value": "2025-04"}], "group_by": null, '
+        '"columns": ["Date", "Item", "Price"]}\n\n'
         f"CATALOG:\n{menu}\n\nQUESTION: {question}"
     )
-    raw = ask(prompt, purpose="numbers-form").strip()
+    # Session 25: temperature 0 — the form sits on real decision boundaries
+    # (the S24 duel: four extra row-count digits in the menu flipped MAX->LIST
+    # between identical runs at default temperature). A form must REPRODUCE.
+    raw = ask(prompt, purpose="numbers-form", temperature=0.0).strip()
     # Tolerate a model that wraps the JSON in ``` fences despite the instruction.
     if raw.startswith("```"):
         raw = raw.strip("`")

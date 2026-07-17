@@ -5,6 +5,12 @@
 
 ## Ingestion
 
+- **PDFs get no gate treatment yet.** The ingest gate (survey → clarifying
+  questions → reading card) is the default door for **Excel only** (Session 25);
+  a messy or scanned PDF is still ingested silently with no questions asked.
+  *Fix path:* extend the gate idea to the PDF branch (quality scan + uploader
+  questions) — a recorded future extension, eval-gated like everything else.
+
 - **Visual / image-heavy PDF catalogs extract only partially.** On a real product
   catalog (`品牌`, 37 pages, mixed Chinese/English), Docling rebuilt page 1 into a
   clean table but pages 2–3 fragmented into loose text scraps. Cause: free-form,
@@ -21,13 +27,6 @@
   planner has no photo lane, so a user asking the brain gets text only.
   *Fix path:* a photo-lookup step in the planner after the ingest gate ships,
   with its own known-answer eval ("show me the image of the best seller").
-
-- **The numbers FORM is nondeterministic on rare runs.** The plan layer is solid
-  (60/60 correct plans in the Session-16 eval, zero cage violations), but the
-  form-filling call occasionally wobbles: once it chose SUM instead of COUNT for
-  "how many orders", and item-LIST steps occasionally return empty. *Fix path
-  (Session 17):* tighten the form prompt on count/list intent, retry once on an
-  empty list step, and/or lower that call's temperature — eval-graded.
 
 - **Plans are 2D only (no branching plans).** The planner writes the whole
   checklist upfront; a question whose NEXT step depends on an intermediate answer

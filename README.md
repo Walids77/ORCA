@@ -28,7 +28,11 @@ and returns exact numbers, citations, and business explanations.
    (−28% latency) → router 11/13 (13/13 lane picks) → planner+waves 12/13, incl.
    the first full pass on a dependency question → after the calculate lane +
    catalog meanings + a data-cleaning round on the source workbook: floor 11/15,
-   best run 15/15** (repeated runs — an unreproducible pass counts for nothing);
+   best run 15/15 → after the planner input fence + numbers-form stabilization
+   (temperature 0 + worked examples + a list-dump guard): 15/15 repeated —
+   including twice in a row on a store ingested through the human-in-the-loop
+   gate, which then became the default Excel door** (repeated runs — an
+   unreproducible pass counts for nothing);
    every eval recorded with a diagnosis trail, answer keys verified against the
    source file itself. Re-uploading a changed file first purges ALL its stored
    traces (SQL + vectors), then stores a clean copy.
@@ -37,7 +41,13 @@ and returns exact numbers, citations, and business explanations.
 
 ## How ingestion works (so far)
 A file enters one **doorman** that detects its type by content and routes it to a
-specialist. The Excel specialist turns a workbook into three linked stores:
+specialist. **Excel goes through the ingest GATE by default** (since Session 25):
+a structure survey maps the sheet's real tables, headers, totals and hidden parts;
+an LLM names each table's meaning from that map (never the raw cells); then one
+gate decision — unreadable (stop and say why) · clarify (a short plain-English
+question list the uploader answers once; the answers are remembered on the file's
+**reading card** and reused on every re-upload) · all clear — and only then does
+the workbook become three linked stores:
 **SQL** (exact numbers, one typed table per sheet), **vectors** (semantic search over
 each row), and a **raw file copy + manifest** — every record carries a pointer home
 (sheet + row) for citations and a content hash for cheap incremental re-uploads.

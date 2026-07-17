@@ -516,12 +516,100 @@
     two lost points are a BRAIN seam (the numbers form flips between "find the max month" and
     "list all months"; A/B measured: old-door store 5/5, gate store 2/5). Next: numbers-form
     stabilization (few-shot · temperature 0 · list-dump guard) → duel rematch → the multi-file
-    eval shape.</p>
+    eval shape.
+    <strong>Session 25 stabilized the form — and the gate WON its rematch and became the
+    DEFAULT Excel door.</strong> The three levers (temperature 0 · two worked examples in the
+    form's prompt · a guard so a multi-row list is never pasted into a next step's question)
+    turned the A/B from 2/5 into a perfect 10/10 — the form now picks the identical right
+    answer every run on both stores. The old store still grades 15/15, and the gate store
+    scored <strong>15/15 twice in a row</strong>. Walid's ruling: a tie with cleaner data underneath
+    (sums exact to the cent · printed totals dropped · template rows excluded) satisfies the
+    migration rule → the gate now stores by default, the old path is a marked fallback, and
+    the <strong>gate-built store is LIVE in production</strong>. Next: the multi-file eval shape.</p>
   </div>
 </div>
 
 <div class="card">
-  <p style="margin-bottom:.7rem"><strong>The ingest GATE — reading a messy Excel before we trust it (Session 18).</strong>
+  <p style="margin-bottom:.7rem"><strong>🗺️ The whole system — the flow from file upload to answer (as of Session 25).</strong>
+  Read it top to bottom: a file goes in at the top, the three stores sit in the middle,
+  and a question travels the bottom half. The gate is now the <b>default</b> Excel door.</p>
+  <pre style="background:var(--later-bg);border:1px solid var(--line);border-radius:8px;padding:1rem;overflow-x:auto;font-size:.72rem;line-height:1.4;font-family:ui-monospace,Consolas,monospace">
+                        ┌─────────────────────┐
+                        │   YOU UPLOAD A FILE │
+                        └──────────┬──────────┘
+                                   │
+                        ┌──────────▼──────────┐
+                        │      THE DOORMAN    │  looks INSIDE the file
+                        │  (file-type check)  │  (never trusts the name)
+                        └───┬──────────┬──────┘
+                            │          │
+                 "it's Excel"          "it's a PDF"
+                            │          │
+    ┌───────────────────────▼──┐   ┌───▼───────────────────────┐
+    │  THE GATE (DEFAULT DOOR) │   │  PDF PROCESSOR (unchanged)│
+    │                          │   │                           │
+    │ 1. SURVEYOR maps the     │   │ 1. Extract text + tables  │
+    │    sheet: real rows vs   │   │    (layout-aware)         │
+    │    template junk, true   │   │ 2. Prose → smart chunks   │
+    │    headers, glued tables,│   │    (small chunks for      │
+    │    totals, hidden parts, │   │    findable facts)        │
+    │    photos                │   │ 3. Number tables → SQL    │
+    │ 2. LLM names each        │   │    (stitched, total rows  │
+    │    table's MEANING       │   │    flagged by shape)      │
+    │ 3. ONE decision:         │   └───────────┬───────────────┘
+    │    · unreadable → stop   │               │
+    │    · questions → ask YOU │               │
+    │    · all clear → go      │               │
+    │ 4. Your answers saved on │               │
+    │    the file's READING    │               │
+    │    CARD (reused on       │               │
+    │    re-upload)            │               │
+    └────────────┬─────────────┘               │
+                 │                             │
+                 └──────────────┬──────────────┘
+                                │
+                 ┌──────────────▼────────────────┐
+                 │        THE 3 STORES           │
+                 │  · SQL store    = exact numbers│
+                 │  · Vector store = meaning/text │
+                 │  · File store   = the original │
+                 │  (+ photos table + captions)   │
+                 └──────────────┬────────────────┘
+                                │
+  ══════════════════ QUESTION TIME ═════════════════════════════
+                                │
+   YOU ASK A QUESTION           │
+        │        ┌──────────────▼───────────────┐
+        └───────►│         THE PLANNER          │ sees the data MENU
+                 │  writes a checklist of steps │ (catalog + meanings +
+                 │  (what to find, which lane,  │  short doc names only)
+                 │   what waits for what)       │
+                 └──────────────┬───────────────┘
+                                │
+                 ┌──────────────▼───────────────┐
+                 │  PLAN-RUNNER (round 1, 2…)   │
+                 │  each step goes down a LANE: │
+                 │  · TEXT lane  → hybrid search│
+                 │  · NUMBERS lane → the FORM   │ ◄─ stabilized S25:
+                 │    (LLM fills it, OUR code   │    temperature 0 +
+                 │     runs the SQL — never     │    worked examples +
+                 │     LLM-written SQL)         │    list-dump guard
+                 │  · CALCULATE lane → our      │
+                 │    whitelisted math          │
+                 └──────────────┬───────────────┘
+                                │
+                 ┌──────────────▼───────────────┐
+                 │           COMBINE            │
+                 │  one answer: exact figures + │
+                 │  citations + which file they │
+                 │  came from; refuses honestly │
+                 │  when the data has nothing   │
+                 └──────────────────────────────┘
+  </pre>
+</div>
+
+<div class="card">
+  <p style="margin-bottom:.7rem"><strong>The ingest GATE — reading a messy Excel before we trust it (Session 18). ★ Since Session 25 this is the DEFAULT Excel door: every Excel upload goes through the gate; the old direct path is a marked fallback.</strong>
   Tested on a real 30-sheet corporate workbook, the old reader failed <em>silently</em>: it took a
   decorative banner as the header (29 of 31 columns became <code>column_2</code>, <code>column_3</code>…),
   reported <b>878 rows where 22 exist</b>, and mashed three side-by-side tables into one — while raising
@@ -595,6 +683,10 @@
 <h2>📓 Session log — click a session to read it</h2>
 
 <details class="session" open>
+  <summary>Jul 18 · Session 25 <span class="when">the numbers form stabilized · the gate WINS the rematch (15/15 ×2) · the gate becomes the DEFAULT Excel door</span></summary>
+  <p>The session Session 24 ordered, delivered in full. First the <b>three stabilization levers</b> on the numbers form — the small fill-in sheet the LLM completes before our code runs the SQL: <b>temperature 0</b> (the randomness dial off — the same cure that fixed the flaky gate verdicts in Session 21), <b>two worked examples inside the form's own prompt</b> (one "which month was highest" ranking example, one "show me the rows" list example, with made-up names so they can never be copied as real data — plus a hard rule: a which-is-highest question is NEVER answered with a list), and the <b>list-dump guard</b> (a multi-row list can no longer be pasted into a later step's question; the step declines honestly instead of derailing on gibberish). The proof, in order: the Session-24 A/B re-run came back <b>10 out of 10</b> — the form picks the identical grouped-SUM every run on both stores, where the gate store had flipped 3 times in 5. The live store's full exam: <b>15/15 — the third consecutive perfect run.</b> Then the rematch: the gate-built store, same 15 questions — <b>15/15, and 15/15 again</b> (no lucky passes). The two questions the gate lost in Session 24 passed every run. The owner's ruling followed: the gate ties the old door on score and beats it underneath — every sum exact to the cent, printed total rows dropped rather than flagged, three never-typed template rows excluded — so <b>tie-with-cleaner-data satisfies the migration rule, and the gate is promoted to the DEFAULT Excel door.</b> The wiring: the gate now stores by default (a switch turns it off; the dry run is unchanged), the old ingest script carries a loud legacy-fallback banner, and the <b>gate-built store was swapped into production</b> — with the old-door store parked by name as the rollback point. Post-swap proof: a dry gate run reused all six reading-card answers with zero new questions, and the live brain answered the highest-month question correctly end-to-end. PDF ingestion is untouched — the gate only ever sat on the Excel branch; the doorway still routes PDFs to the proven PDF processor. Next: the <b>multi-file eval shape</b> (questions that name the company + refusal traps), and the refuse-when-ambiguous flip likely needs the same focused-question treatment.</p>
+</details>
+<details class="session">
   <summary>Jul 17–18 · Session 24 <span class="when">first repeated 15/15 + the title-injection fix + the gate's first duel (13/15 — stays opt-in)</span></summary>
   <p>The session Session 23 ordered: re-run the full 15-question eval and prove the two cross-file levers regress nothing. Getting a fair exam took three attempts — the first run graded 11/15 against a store still holding <em>both</em> brands' books (questions that never name a company became genuinely ambiguous, so the new refuse-instead-of-guess lever fired — partly by design), and the second against a different <em>edition</em> of the workbook than the answer key was built on. That one was caught by the owner himself: told his invoices total had a bug, he challenged the number against his own file and was right — we were reading the newer live workbook, he was reading the eval file. (The live file does carry its own real bug — its invoices Total formula stops at March — but that's <em>its</em> bug, and his to fix at the source.) On the true baseline: <b>12/15, numbers a perfect 6/6</b>, average basket to the cent. The one repeating fail then got the full hunt, and the root cause was a lever side effect: the "every step repeats the name" rule made the planner expand "the survey" into the document's <b>full ALL-CAPS title</b> inside the step's question — and a title is made of the document's own commonest words, so both searches flooded toward title-echoing chunks and the answer chunk (whose section heading literally <em>is</em> the answer) fell out of the top twenty. Five of six logged runs injected the title and failed; the one short question passed. A polite prompt rule ("don't do that") failed 0/4 — so the fix went in the code-certain way, the same fence-the-input philosophy as the RBAC filter: the planner's document list now shows only <b>short file names</b>, never titles. <b>You can't paste what you never saw.</b> Result: <b>15/15 — and then 15/15 again. The first repeated perfect run in ORCA's history</b>, and the day's fastest and cheapest runs too. Then the owner called the big match: <b>the gate's first duel.</b> Same file, same exam, but ingested through the gate door — six meaning confirmations (a press of Enter each), every stored sum matching the sheet's printed totals to the cent, printed total rows dropped rather than flagged, three never-typed template rows excluded. Score: <b>13/15 — the gate loses, and by the standing migration rule it stays opt-in.</b> But the post-mortem is the real prize: the two lost points are <em>not the gate's data</em> — they're a brain seam. The numbers form, asked "which month was highest," sometimes answers by listing all the months instead of picking the winner, and that row-dump then poisons the dependent step's question. A controlled A/B — five runs per store, same brain — measured old-door 5/5 vs gate 2/5, with the only prompt difference being four row-count digits: the form sits on a knife's edge at default temperature. The cure is already on the books (the Session-21 pattern: focused question, temperature 0, plus a guard so a list-dump never enters a question). Next session: stabilize the form → rematch the duel → the multi-file eval shape.</p>
 </details>

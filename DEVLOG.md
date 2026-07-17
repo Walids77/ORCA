@@ -2,6 +2,38 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-18 — Session 25: numbers form stabilized · the gate WINS the rematch · the gate becomes the DEFAULT Excel door
+- **The three form-stabilization levers** (the S24 plan, built exactly as agreed):
+  (1) **temperature 0** on the numbers-form call — the S21 reproducibility cure applied to
+  the form; (2) **few-shot worked examples inside the form's prompt** — one ranking example
+  ("which month was highest" → group-by + SUM) and one list example ("show me the rows" →
+  LIST), with made-up names so they can never be copied as real data, plus a hard rule that
+  a which-is-highest question is NEVER answered with LIST; (3) **the list-dump guard** in the
+  plan-runner — a multi-row LIST result is never pasted into a later step's question (one
+  row rides along; many rows become an honest "the earlier step returned a list of N rows",
+  so the dependent step declines instead of derailing).
+- **Proof, in order:** the S24 A/B re-run = **10/10 identical forms** (was old-door 5/5 ·
+  gate 2/5); the live old-door store still **15/15** (third consecutive perfect run — the
+  levers regress nothing); **the gate duel REMATCH: 15/15, then 15/15 again** on the
+  gate-built store (no-lucky-passes satisfied; both S24 fallers passed every run).
+- **Walid's ruling — the gate is PROMOTED to the default Excel door.** It ties the old door
+  on score and beats it underneath (sums exact to the cent · printed total rows dropped, not
+  flagged · 3 never-typed template rows excluded). Wiring: the gate runner now **stores by
+  default** (`--no-store` to skip, `--dry` unchanged); the old ingest script carries a
+  LEGACY-FALLBACK banner; **the gate-built store swapped into production** (the old-door
+  store parked by name as the rollback point). Post-swap proof: a dry gate run reused all 6
+  reading-card answers with 0 new questions; the live brain answered the highest-month
+  question correctly end-to-end.
+- **PDF ingestion untouched** — the gate only sits on the Excel branch; the doorman still
+  routes PDFs to the proven Docling path. (A gate-style treatment for messy PDFs stays a
+  recorded future extension, not a loss.)
+- `progress.html` gained a full **upload-to-answer system diagram** (doorman → gate/PDF →
+  3 stores → planner → rounds/lanes → combine) — Walid's overview request.
+- Eval record: `eval/form_stabilization_gate_rematch_2026-07-18.md` (gitignored, real data).
+- **Next session:** the **multi-file eval shape** — questions that name the company +
+  refusal traps; the refuse-when-ambiguous flip likely needs the same focused-question
+  treatment as the form.
+
 ## 2026-07-17/18 — Session 24: first REPEATED 15/15 + the title-injection fix + the gate's first duel
 - **Session goal (from S23): prove the two cross-file levers regress nothing.** Verdict earned
   the hard way — the first two eval runs weren't comparable (the stores still held the S23

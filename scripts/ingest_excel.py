@@ -1,8 +1,14 @@
-"""Ingest one Excel file into ORCA's stores (SQL + vectors).
+"""Ingest one Excel file into ORCA's stores (SQL + vectors) — LEGACY FALLBACK.
 
-Re-runs the proven Session-2 pipeline on data/OB7ola.xlsx so the numbers leg
-of the brain has real retail data to answer from. Re-running is safe: both
-stores wholesale-replace this file's previous rows/chunks.
+>>> SINCE 2026-07-18 (Session 25) THIS IS NO LONGER THE DEFAULT EXCEL DOOR. <<<
+The INGEST GATE (private/run_gate.py) is now the default: it surveys the
+sheet's real structure, asks the uploader the clarifying questions, remembers
+the answers on a reading card, and only then ingests. It matched this path's
+eval score (15/15, twice) with cleaner data. Keep this script only as the
+gate-less fallback (e.g. on a checkout without the private/ folder).
+
+Re-runs the proven Session-2 pipeline. Re-running is safe: both stores
+wholesale-replace this file's previous rows/chunks.
 
 Usage:  python scripts/ingest_excel.py [path-to-xlsx]
 """

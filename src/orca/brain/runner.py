@@ -69,10 +69,16 @@ def step_answer_text(result: dict) -> str:
         # a bogus filter Net Sales = 1755.0 and return zero rows. The figure
         # reaches the final answer through the computing step's own block.
         return _pretty(rows[0]["group"])
-    if r.get("computed") == "matching rows":     # LIST: first rows, compact
-        lines = [", ".join(f"{k}: {_pretty(v)}" for k, v in row.items() if v is not None)
-                 for row in rows[:5]]
-        return "; ".join(lines)
+    if r.get("computed") == "matching rows":     # LIST result feeding a later step
+        # Session 25 guard (from the S24 duel): a MULTI-row list pasted into a
+        # question poisons the next step's form/search — the step reads like
+        # gibberish and answers "no info". One row can ride along; many rows =
+        # say so honestly and let the next step decline instead of derail.
+        if len(rows) == 1:
+            return ", ".join(f"{k}: {_pretty(v)}" for k, v in rows[0].items()
+                             if v is not None)
+        return (f"(the earlier step returned a list of {len(rows)} rows, "
+                "not a single value)")
     return str(rows[0].get("value"))
 
 
