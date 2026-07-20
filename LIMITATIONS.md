@@ -39,6 +39,19 @@
 
 ## Retrieval
 
+- **The same question can pick different sheets between runs.** A figure like
+  "Blackpearl's April sales" can come from the Summary sheet (318) or the Sales
+  sheet filtered by date (256 before the source dates were fixed) — the numbers
+  form chooses, and it isn't deterministic. Session 26 surfaced it with a real
+  62-gap. *Fix path:* make the sheet choice stable / prefer the summary for
+  period totals, eval-graded — a named seam for a later session.
+
+- **The final answer-writer sometimes splits one row into two bullets.** A single
+  sale whose remark reads "Anchor Bracelet + Howlite Bracelet" can come back as two
+  list items (Session 26, Blackpearl April). Routing and data are correct; this is
+  a presentation wobble in the combine step. *Fix path:* tighten the list-rendering
+  instruction, minor.
+
 - **One fragile fact can flip with question phrasing.** The survey's "primary
   bottleneck" answer passes under some sub-question wordings and fails under
   others in the SAME code (Session-15: passed as a direct question, failed

@@ -201,7 +201,7 @@
 <body>
 
 <h1>🐋 ORCA — Progress</h1>
-<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 18, 2026</strong></p>
+<p class="sub">The clean cloud rebuild · brain-first · local-first · AWS last &nbsp;·&nbsp; Last updated: <strong>July 20, 2026</strong></p>
 
 <!-- ============ HERO: WHERE ORCA STANDS ============ -->
 <div class="dash">
@@ -525,7 +525,15 @@
     scored <strong>15/15 twice in a row</strong>. Walid's ruling: a tie with cleaner data underneath
     (sums exact to the cent · printed totals dropped · template rows excluded) satisfies the
     migration rule → the gate now stores by default, the old path is a marked fallback, and
-    the <strong>gate-built store is LIVE in production</strong>. Next: the multi-file eval shape.</p>
+    the <strong>gate-built store is LIVE in production</strong>. Next: the multi-file eval shape.
+    <strong>Session 26 ran that multi-file eval (round 1 of 3) — routing 8/8, zero wrong-file
+    answers.</strong> Two companies with the same sheet names now live side by side; ORCA
+    answered each from the right file and asked "which company?" when none was named. Closing
+    the round found three gaps, all fixed: two NEW gate checks (a date column with a few
+    text-typed cells that silently vanish from month questions · month formulas that overlap
+    and double-count) + the "refuse when ambiguous" guard, which turned out to have <em>never
+    been on</em> (it was 4/4 confidently wrong — a lucky pass the new step-by-step eval loop
+    caught). Next: rounds 2 &amp; 3 — a PDF with tables inside, then a finance sheet.</p>
   </div>
 </div>
 
@@ -683,6 +691,11 @@
 <h2>📓 Session log — click a session to read it</h2>
 
 <details class="session" open>
+  <summary>Jul 20 · Session 26 <span class="when">cross-file eval (round 1 of 3) — routing 8/8 · two new gate checks · the "ask which company" guard finally turned ON</span></summary>
+  <p>The first of three planned evals, run a new way at the owner's request: a <b>five-stop loop</b> — agree the files, then the questions and the reason for each, then run, then walk the answers one by one, then name the gaps together. Evals had been flashing past too fast for him to see what the system could and couldn't do; from now on visibility beats speed, because the eval is how he learns his own system. <b>Round 1 = the cross-file trap</b> Session 23 predicted: two companies (OB7ola + Blackpearl) with near-identical sheet names living in one store. Result: <b>routing 8 out of 8 — zero wrong-file answers.</b> The paired trap held (Blackpearl's May sales came back 294, not OB7ola's 1429); one question compared both companies in a single ask (989 vs 318). Closing the round found three gaps, all fixed the same session. <b>One:</b> five Blackpearl rows had their date typed as text ("23 april"), so every month question silently skipped them — about $62 of sales invisible with no warning. A new gate check now names cells that disagree with their column's type (a <em>different</em> question from the old "mixed column" note, which stays silent above 80% clean — this column was 92% clean, so the bad cells hid in the crowd). <b>Two:</b> "What was the best month for sales?" with no company named answered "December, 3091" from OB7ola — measured <b>four times out of four, confidently wrong.</b> The Session-23 guard meant to refuse here had <em>never actually fired</em>, because it only triggered when the form left the company blank and the form almost always guesses one. It now trusts the form's company pick only if the user's own words named it — reading the user's original question, not the planner's rewrite (the planner sometimes injects a company the user never said) — and otherwise asks "which company — ob7ola or obblackpearl?". Proven five times out of five. That earlier "pass" had been a <b>lucky pass</b>, and the new step-by-step loop is exactly what caught it. <b>Three:</b> the gate had no way to see a formula that double-counts; a new check verifies each month's row-range marches without overlap or gap, and it caught both the July/August sales overlap and a bonus — June's expenses were swallowing all of July and August. A note on tools: openpyxl was <em>not</em> newly added — it has always been the surveyor's Excel reader; the value this session was new reasoning on the grid it already produces. The owner fixed his own source files (ORCA reports, never auto-corrects), and after each fix the gate re-ran with nothing left to ask — proof the new checks are precise, not noisy. Also produced: <code>how_orca_works.html</code>, a re-readable plain-English explainer of the whole upload-to-answer path. Next: rounds 2 &amp; 3 — a PDF with tables inside, then a finance sheet.</p>
+</details>
+
+<details class="session">
   <summary>Jul 18 · Session 25 <span class="when">the numbers form stabilized · the gate WINS the rematch (15/15 ×2) · the gate becomes the DEFAULT Excel door</span></summary>
   <p>The session Session 24 ordered, delivered in full. First the <b>three stabilization levers</b> on the numbers form — the small fill-in sheet the LLM completes before our code runs the SQL: <b>temperature 0</b> (the randomness dial off — the same cure that fixed the flaky gate verdicts in Session 21), <b>two worked examples inside the form's own prompt</b> (one "which month was highest" ranking example, one "show me the rows" list example, with made-up names so they can never be copied as real data — plus a hard rule: a which-is-highest question is NEVER answered with a list), and the <b>list-dump guard</b> (a multi-row list can no longer be pasted into a later step's question; the step declines honestly instead of derailing on gibberish). The proof, in order: the Session-24 A/B re-run came back <b>10 out of 10</b> — the form picks the identical grouped-SUM every run on both stores, where the gate store had flipped 3 times in 5. The live store's full exam: <b>15/15 — the third consecutive perfect run.</b> Then the rematch: the gate-built store, same 15 questions — <b>15/15, and 15/15 again</b> (no lucky passes). The two questions the gate lost in Session 24 passed every run. The owner's ruling followed: the gate ties the old door on score and beats it underneath — every sum exact to the cent, printed total rows dropped rather than flagged, three never-typed template rows excluded — so <b>tie-with-cleaner-data satisfies the migration rule, and the gate is promoted to the DEFAULT Excel door.</b> The wiring: the gate now stores by default (a switch turns it off; the dry run is unchanged), the old ingest script carries a loud legacy-fallback banner, and the <b>gate-built store was swapped into production</b> — with the old-door store parked by name as the rollback point. Post-swap proof: a dry gate run reused all six reading-card answers with zero new questions, and the live brain answered the highest-month question correctly end-to-end. PDF ingestion is untouched — the gate only ever sat on the Excel branch; the doorway still routes PDFs to the proven PDF processor. Next: the <b>multi-file eval shape</b> (questions that name the company + refusal traps), and the refuse-when-ambiguous flip likely needs the same focused-question treatment.</p>
 </details>

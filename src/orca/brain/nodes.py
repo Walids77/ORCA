@@ -101,7 +101,7 @@ def make_answer_numbers_node(sql: SqlStore, company_id: str,
         # Focused sub-question from the router when present, else the original.
         question = notebook.get("numbers_question") or notebook["question"]
         plan = plan_query(question, menu)
-        result = run_plan(sql, catalog, plan)
+        result = run_plan(sql, catalog, plan, question)
         return {"number_result": result}
 
     return answer_numbers_node
@@ -173,7 +173,51 @@ def llm_combine_node(notebook: Notebook) -> dict:
 # (for [1]-style citations); each numbers step contributes its own computed
 # block, labelled with the step's focused question so the answer-writer knows
 # which figure answers which part.
+def _ambiguity_question(notebook: Notebook) -> str:
+    """When the ONLY thing blocking an answer is 'which company did you mean?',
+    ask that instead of refusing.
+
+    Session-26 eval: "What was the best month for sales?" with two companies in
+    the store returned "I can't answer that from the uploaded documents." True,
+    honest, and useless — the user cannot tell whether the data is missing, the
+    question is bad, or ORCA is confused. Built in CODE, not asked of the
+    combine LLM, so it cannot have an off day (the same reason the planner's
+    doc list is code-filtered).
+
+    Only fires when NOTHING else answered: a half-answerable question must
+    still get its answerable half (the Session-15 all-or-nothing lesson).
+    """
+    files: list[str] = []
+    sheets: list[str] = []
+    for res in notebook.get("step_results", {}).values():
+        result = res.get("result") or {}
+        if not isinstance(result, dict):
+            continue
+        cand = result.get("ambiguous_files")
+        if not cand:
+            return ""          # a step failed for some OTHER reason -> normal path
+        for f in cand:
+            if f not in files:
+                files.append(f)
+        s = result.get("ambiguous_sheet")
+        if s and s not in sheets:
+            sheets.append(s)
+    if len(files) < 2:
+        return ""
+    named = " or ".join(files) if len(files) == 2 else \
+        ", ".join(files[:-1]) + f", or {files[-1]}"
+    where = f"a '{sheets[0]}' sheet" if len(sheets) == 1 else "the same sheet names"
+    return (f"Which company do you mean — {named}? Both files have {where}, "
+            f"so I can't tell which one your question is about. Ask again "
+            f"naming the company and I can answer it exactly.")
+
+
 def plan_combine_node(notebook: Notebook) -> dict:
+    # code-certain clarify path: ask WHICH FILE rather than refuse outright
+    clarify = _ambiguity_question(notebook)
+    if clarify:
+        return {"answer": clarify}
+
     passages, numbers_blocks = [], []
     for n in sorted(notebook.get("step_results", {})):
         res = notebook["step_results"][n]

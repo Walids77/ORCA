@@ -194,7 +194,32 @@ def plan_query(question: str, menu: str) -> dict:
 
 
 # ── MOVE 2: our code validates the form and runs the query ──────────────────
-def run_plan(sql: SqlStore, catalog: list[dict], plan: dict) -> dict:
+def _question_names_file(question: str, file_id: str) -> bool:
+    """Did the ASKER actually name this file/company?
+
+    A prior guard ("refuse when two files share a sheet name") only fired when
+    the FORM left "file" blank. Measured over repeated runs, the form instead
+    guesses a company almost every time — so a question like "what was the best
+    month for sales?" answered confidently about one company without ever
+    revealing it had chosen. The guard was never really on.
+
+    So the form's file pick is only TRUSTED when the question itself names that
+    file. Compared on a squashed, lowercased string (a possessive like
+    "acme's" must match a file_id like "acme_co"), needing a run of 5+ shared
+    characters. Erring toward asking is deliberate: an unnecessary clarifying
+    question is mildly annoying, answering about the wrong company is a silent lie.
+    """
+    q = "".join(ch for ch in question.lower() if ch.isalnum())
+    fid = "".join(ch for ch in file_id.lower() if ch.isalnum())
+    if not q or len(fid) < 5:
+        return False
+    return any(fid[i:j] in q
+               for i in range(len(fid))
+               for j in range(i + 5, len(fid) + 1))
+
+
+def run_plan(sql: SqlStore, catalog: list[dict], plan: dict,
+             question: str = "") -> dict:
     """Execute a validated plan. Every identifier must exist in the catalog;
     every value is parameterised; Total rows are always excluded."""
     if not plan.get("needed"):
@@ -207,6 +232,12 @@ def run_plan(sql: SqlStore, catalog: list[dict], plan: dict) -> dict:
     # file — the Session-23 cross-file eval failure).
     matches = [e for e in catalog if e["sheet"] == plan.get("sheet")]
     wanted_file = str(plan.get("file") or "").strip()
+    # Only honour the form's file pick if the ASKER named that file. When the
+    # question names nobody and several files could answer, the form's guess is
+    # exactly the thing we must not trust (see _question_names_file).
+    if wanted_file and len(matches) > 1 and question \
+            and not _question_names_file(question, wanted_file):
+        wanted_file = ""
     if wanted_file:
         matches = [e for e in matches if e["file_id"] == wanted_file]
     if not matches:
@@ -214,8 +245,16 @@ def run_plan(sql: SqlStore, catalog: list[dict], plan: dict) -> dict:
                 "error": f"unknown sheet {plan.get('sheet')!r}"
                          + (f" in file {wanted_file!r}" if wanted_file else "")}
     if len(matches) > 1:
-        files = ", ".join(e["file_id"] for e in matches)
+        cand = [e["file_id"] for e in matches]
+        files = ", ".join(cand)
+        # The file list rides back as DATA, not just inside the error sentence.
+        # The combine step turns it into a clarifying question ("which company?"),
+        # and building that from a parsed string would be one bad regex away from
+        # breaking. Session 26: an honest refusal is good; a refusal that tells
+        # the user how to succeed is the point.
         return {"needed": True,
+                "ambiguous_files": cand,
+                "ambiguous_sheet": plan.get("sheet"),
                 "error": f"sheet {plan.get('sheet')!r} exists in several files "
                          f"({files}) — the plan must say which file"}
     entry = matches[0]

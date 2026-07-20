@@ -2,6 +2,48 @@
 
 > Newest entry first. One dated entry per work session.
 
+## 2026-07-20 — Session 26: cross-file eval (round 1 of 3) — 8/8 routing · two new gate checks · the ambiguity guard finally turned ON
+- **New standing rule (Walid's):** evals now run as a **five-stop loop** — agree the FILES,
+  then the QUESTIONS + the reason for each, THEN run, THEN walk the answers one by one, THEN
+  name the gaps together. Evals had been running too fast for him to see what the system could
+  and couldn't do. Visibility over speed; the eval is how he learns his own system.
+- **Round 1 = the cross-file eval** (the shape Session 23 predicted would fail): two companies
+  (`OB7ola` + `Blackpearl`) with near-identical sheet names live in one store. Result:
+  **routing 8/8 — zero wrong-file answers.** The paired trap held (Blackpearl May = 294, not
+  OB7ola's 1429); a two-company comparison read BOTH files in one question (989 vs 318).
+- **Three gaps found and fixed — all code-certain, all regression-tested:**
+  - **Silent data loss.** 5 Blackpearl rows had the date typed as text ("23 april"); every
+    month filter skipped them, dropping ~$62 with no warning. New surveyor check
+    **`_odd_cells_out`** names cells that disagree with their column's type. It is a *different
+    question* from the old "mixed column" note (which only fires below 80% consistency — this
+    column was 92% clean, so the bad cells hid in the majority). Scoped to DATE columns: a wider
+    first draft fired 30× on the corporate workbook, narrowed on Walid's rule *no lever without a
+    failing eval*.
+  - **The ambiguity guard was never actually on.** "What was the best month for sales?" (no
+    company named) answered "December, 3091" from OB7ola — measured **4/4 confidently wrong**.
+    The Session-23 "refuse when ambiguous" guard only fired when the numbers FORM left the file
+    blank, and the form guesses a company nearly every time. Now the form's file pick is trusted
+    **only if the user's own words named it** — and it reads the user's ORIGINAL question, not the
+    planner's rewrite (the planner sometimes injects a company the user never typed — the Session-24
+    title-injection shape in a new place). When ambiguous, the numbers lane hands the file list back
+    as DATA and the combine step builds a plain **"Which company — ob7ola or obblackpearl?"** in code.
+    Proven **5/5 clarify**, and the named questions still answer 8/8. This "pass" had been a **lucky
+    pass** in the first run — the five-stop loop is what exposed it.
+  - **Overlap blindness.** The gate had no check for a formula that double-counts. New
+    **`_range_coverage`** verifies each summary month's row-range marches without overlap or gap;
+    it caught the July/August sales overlap **and** a bonus — Blackpearl's June expenses (rows
+    44–63) were swallowing all of July and August.
+- **openpyxl did not get "integrated" this session** — it has always been the surveyor's reader
+  (it opens every workbook twice: values + formulas). The value added was new *reasoning* on the
+  grid it already parses; both new checks call openpyxl zero times.
+- **Walid fixed his own source files** (face-value rule — ORCA reports, never auto-corrects): the
+  OB7ola invoice formulas and June count, and Blackpearl's two overlaps + the text dates. After each
+  fix the gate re-ran with **nothing left to ask** — proof the new checks are precise, not noisy. He
+  also ruled Blackpearl's Sales sheet is one table (money + delivery columns side by side), not two.
+- **Artifact:** `how_orca_works.html` — a re-readable plain-English explainer (upload → gate →
+  stores, then three traced example questions) for Walid to revisit.
+- **Next session:** rounds 2 and 3 — a PDF with tables inside, then a finance sheet (P&L / invoices).
+
 ## 2026-07-18 — Session 25: numbers form stabilized · the gate WINS the rematch · the gate becomes the DEFAULT Excel door
 - **The three form-stabilization levers** (the S24 plan, built exactly as agreed):
   (1) **temperature 0** on the numbers-form call — the S21 reproducibility cure applied to

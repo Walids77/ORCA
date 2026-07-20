@@ -107,7 +107,11 @@ def make_plan_runner_node(text_searcher: HybridSearcher, sql: SqlStore,
                           catalog: list[dict], menu: str, k: int = 5):
     """catalog/menu arrive already RBAC-filtered (built once in graph.py)."""
 
-    def run_one_step(step: dict, step_results: dict) -> dict:
+    # `asked` = what the USER actually typed. Deliberately NOT the step's own
+    # question: the planner rewrites steps and sometimes injects a company the
+    # user never mentioned, which would let a made-up name pass as if the user
+    # had named it (the Session-24 title-injection shape, in a new place).
+    def run_one_step(step: dict, step_results: dict, asked: str = "") -> dict:
         question = _fill_question(step, step_results)
         try:
             if step["lane"] == "text":
@@ -119,7 +123,9 @@ def make_plan_runner_node(text_searcher: HybridSearcher, sql: SqlStore,
                 return {"lane": "calculate", "question": question,
                         "result": run_calculation(step, step_results)}
             form = plan_query(question, menu)        # MOVE 1: the LLM fills the form
-            result = run_plan(sql, catalog, form)    # MOVE 2: our code runs the SQL
+            # the question rides along so our code can tell whether the ASKER
+            # named a company — the form's own guess is not evidence of that.
+            result = run_plan(sql, catalog, form, asked or question)
             return {"lane": "numbers", "question": question, "result": result}
         except Exception as exc:                     # noqa: BLE001
             # Session 16 safety net: a crashing step fails ALONE — combine
@@ -144,7 +150,8 @@ def make_plan_runner_node(text_searcher: HybridSearcher, sql: SqlStore,
             # THE WAVE: every ready step at once (the legs are thread-safe —
             # SqlStore went per-thread in Session 14).
             with ThreadPoolExecutor(max_workers=len(ready)) as pool:
-                futures = {s["n"]: pool.submit(run_one_step, s, step_results)
+                futures = {s["n"]: pool.submit(run_one_step, s, step_results,
+                                               notebook.get("question", ""))
                            for s in ready}
             for n, fut in futures.items():
                 step_results[n] = fut.result()
